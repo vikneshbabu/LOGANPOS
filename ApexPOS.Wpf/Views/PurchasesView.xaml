@@ -1,0 +1,195 @@
+<UserControl x:Class="ApexPOS.Wpf.Views.PurchasesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ApexPOS.Wpf.Converters"
+             Background="Transparent">
+
+    <UserControl.Resources>
+        <conv:CurrencyConverter x:Key="Currency"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Border Style="{StaticResource CardBorder}" Padding="24">
+            <DockPanel>
+                <!-- Top Navigation Tabs & Actions -->
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,20">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="🚚  Distributor &amp; Wholesale Suppliers" Style="{StaticResource H2}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource SuccessButton}" Content="➕ Add Distributor" Margin="0,0,8,0"
+                                Command="{Binding NewSupplierCommand}" Padding="16,8"/>
+                        <Button Style="{StaticResource PrimaryButton}" Content="📦 Create Purchase Order"
+                                Command="{Binding OpenNewPoModalCommand}" Padding="16,8"/>
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- Search and Status Message -->
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                    <TextBox Style="{StaticResource ModernTextBox}"
+                             Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             FontSize="14"/>
+                </DockPanel>
+
+                <TextBlock DockPanel.Dock="Top" Text="{Binding StatusMessage}" Foreground="{StaticResource AccentSuccessBrush}"
+                           Margin="0,0,0,12" FontWeight="SemiBold"
+                           Visibility="{Binding StatusMessage.Length, Converter={StaticResource BoolVis}}"/>
+
+                <!-- Distributors Cards List -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Suppliers}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#FFFFFF" CornerRadius="12" Padding="20" Margin="0,0,0,16"
+                                        BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <!-- Supplier Name & Contact -->
+                                            <DockPanel Margin="0,0,0,8">
+                                                <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="20" FontWeight="Bold"/>
+                                                <Border Background="#D1FAE5" CornerRadius="4" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="Active Supplier" Foreground="#065F46" FontSize="11" FontWeight="SemiBold"/>
+                                                </Border>
+                                            </DockPanel>
+
+                                            <!-- Contact Details -->
+                                            <WrapPanel Margin="0,0,0,12">
+                                                <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="13" Margin="0,0,24,4">
+                                                    <Run Text="👤 Contact: " FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <Run Text="{Binding ContactPerson}"/>
+                                                </TextBlock>
+                                                <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="13" Margin="0,0,24,4">
+                                                    <Run Text="📞 Phone: " FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <Run Text="{Binding Phone}"/>
+                                                </TextBlock>
+                                                <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="13" Margin="0,0,24,4">
+                                                    <Run Text="📍 Address: " FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <Run Text="{Binding Address}"/>
+                                                </TextBlock>
+                                            </WrapPanel>
+
+                                            <!-- Handled Products Highlight Box -->
+                                            <Border Background="#F8F9FA" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,8">
+                                                <StackPanel>
+                                                    <TextBlock Text="PRODUCTS HANDLED / SUPPLIED:" Style="{StaticResource CaptionText}"
+                                                               FontWeight="Bold" Foreground="{StaticResource AccentPrimaryBrush}" Margin="0,0,0,4"/>
+                                                    <TextBlock Text="{Binding HandledProducts}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <TextBlock Text="{Binding Notes, StringFormat='Notes: {0}'}" Style="{StaticResource CaptionText}"/>
+                                        </StackPanel>
+
+                                        <!-- Edit/Delete Actions -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="16,0,0,0">
+                                            <Button Content="✏️ Edit" Style="{StaticResource SecondaryButton}" Margin="0,0,0,8" Padding="14,6"
+                                                    Command="{Binding DataContext.EditSupplierCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="🗑️ Remove" Style="{StaticResource DangerButton}" Padding="14,6"
+                                                    Command="{Binding DataContext.DeleteSupplierCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- ADD/EDIT DISTRIBUTOR MODAL -->
+        <Grid Panel.ZIndex="100" Visibility="{Binding ShowSupplierModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="520" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="600">
+                    <StackPanel>
+                        <TextBlock Text="Distributor / Supplier Details" Style="{StaticResource H2}" Margin="0,0,0,20"/>
+
+                        <TextBlock Text="DISTRIBUTOR / STORE NAME *" Style="{StaticResource InputLabel}"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+
+                        <TextBlock Text="CONTACT PERSON" Style="{StaticResource InputLabel}"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditContactPerson, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+
+                        <UniformGrid Columns="2" Margin="0,0,0,14">
+                            <StackPanel Margin="0,0,6,0">
+                                <TextBlock Text="PHONE NUMBER *" Style="{StaticResource InputLabel}"/>
+                                <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditPhone, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                            <StackPanel Margin="6,0,0,0">
+                                <TextBlock Text="EMAIL ADDRESS" Style="{StaticResource InputLabel}"/>
+                                <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditEmail, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <TextBlock Text="ADDRESS *" Style="{StaticResource InputLabel}"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditAddress, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+
+                        <TextBlock Text="PRODUCTS THEY ARE HANDLING / SUPPLYING *" Style="{StaticResource InputLabel}" Foreground="{StaticResource AccentPrimaryBrush}"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" Height="60" TextWrapping="Wrap" AcceptsReturn="True"
+                                 Text="{Binding EditHandledProducts, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+
+                        <TextBlock Text="NOTES" Style="{StaticResource InputLabel}"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,24"/>
+
+                        <UniformGrid Columns="2">
+                            <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="0,0,6,0"
+                                    Command="{Binding CloseSupplierModalCommand}"/>
+                            <Button Style="{StaticResource SuccessButton}" Content="💾 Save Distributor" Margin="6,0,0,0"
+                                    Command="{Binding SaveSupplierCommand}"/>
+                        </UniformGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- CREATE PURCHASE ORDER MODAL -->
+        <Grid Panel.ZIndex="100" Visibility="{Binding ShowNewPoModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="480" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <StackPanel>
+                    <TextBlock Text="Create Purchase Order" Style="{StaticResource H2}" Margin="0,0,0,20"/>
+
+                    <TextBlock Text="SELECT DISTRIBUTOR" Style="{StaticResource InputLabel}"/>
+                    <ComboBox ItemsSource="{Binding Suppliers}" SelectedItem="{Binding PoSelectedSupplier}"
+                              DisplayMemberPath="Name" Margin="0,0,0,14"/>
+
+                    <TextBlock Text="SELECT PRODUCT TO RESTOCK" Style="{StaticResource InputLabel}"/>
+                    <ComboBox ItemsSource="{Binding AvailableProducts}" SelectedItem="{Binding PoSelectedProduct}"
+                              DisplayMemberPath="Name" Margin="0,0,0,14"/>
+
+                    <UniformGrid Columns="2" Margin="0,0,0,14">
+                        <StackPanel Margin="0,0,6,0">
+                            <TextBlock Text="QUANTITY" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding PoQuantity, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Margin="6,0,0,0">
+                            <TextBlock Text="UNIT COST PRICE" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding PoUnitCost, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </UniformGrid>
+
+                    <TextBlock Text="PO NOTES" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding PoNotes, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,24"/>
+
+                    <UniformGrid Columns="2">
+                        <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="0,0,6,0"
+                                Command="{Binding ClosePoModalCommand}"/>
+                        <Button Style="{StaticResource SuccessButton}" Content="📦 Submit PO" Margin="6,0,0,0"
+                                Command="{Binding CreatePurchaseOrderCommand}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

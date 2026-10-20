@@ -1,0 +1,1428 @@
+<UserControl x:Class="ApexPOS.Wpf.Views.RegisterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ApexPOS.Wpf.Converters"
+             Background="Transparent"
+             Focusable="True"
+             PreviewKeyDown="UserControl_PreviewKeyDown">
+    <UserControl.Resources>
+        <conv:CurrencyConverter x:Key="Currency"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <conv:PositiveToVisibilityConverter x:Key="PosVis"/>
+        <conv:NullToVisibilityConverter x:Key="NullVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- MAIN POS WORKSPACE (Catalog & Cart) -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="390"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT: Product Catalog -->
+            <DockPanel Grid.Column="0" Margin="24,20,12,20">
+                <!-- Search Bar & Quick Add & Held Tray -->
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource WarningButton}"
+                            Command="{Binding ToggleHeldDrawerCommand}" Height="40" Padding="12,0" Margin="8,0,0,0"
+                            ToolTip="Open Held Orders Tray (F7)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📌 Held Tray (" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding HeldOrdersCount}" FontWeight="Bold"/>
+                            <TextBlock Text=")" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource SuccessButton}" Content="➕ Quick Product"
+                            Command="{Binding OpenQuickProductCommand}" Height="40" Padding="14,0" Margin="8,0,0,0"
+                            ToolTip="Add a new or unlisted product manually and insert to cart (F3)"/>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="🔍 Search"
+                            Command="{Binding SearchCommand}" Height="40" Padding="18,0" Margin="8,0,0,0"/>
+                    <TextBox x:Name="ProductSearchTextBox" Style="{StaticResource ModernTextBox}" Height="40"
+                             Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             FontSize="15" ToolTip="Search products by name, SKU, barcode, or typo-tolerant keyword (F1)">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Return" Command="{Binding ScanBarcodeCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                </DockPanel>
+
+                <!-- Adaptive Fuzzy Search Notice Badge -->
+                <Border DockPanel.Dock="Top" Background="#EFF6FF" BorderBrush="#93C5FD" BorderThickness="1"
+                        CornerRadius="6" Padding="10,6" Margin="0,0,0,12"
+                        Visibility="{Binding FuzzySearchNotice.Length, Converter={StaticResource PosVis}}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding FuzzySearchNotice}" Foreground="#1D4ED8" FontSize="12" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+
+            <!-- Category Tabs with Left/Right Navigation and Mouse Wheel Support -->
+            <Grid DockPanel.Dock="Top" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Scroll Left Button -->
+                <Button Grid.Column="0" Content="◀" Style="{StaticResource SecondaryButton}"
+                        Width="32" Height="36" Padding="0" Margin="0,0,6,0"
+                        ToolTip="Scroll categories left"
+                        Click="CategoryScrollLeft_Click"/>
+
+                <!-- Scrollable Categories Bar -->
+                <ScrollViewer Grid.Column="1" x:Name="CategoryScrollViewer"
+                              HorizontalScrollBarVisibility="Hidden"
+                              VerticalScrollBarVisibility="Disabled"
+                              PreviewMouseWheel="CategoryScrollViewer_PreviewMouseWheel">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource SecondaryButton}" Content="All" Margin="0,0,6,0"
+                                Command="{Binding ShowAllProductsCommand}" Padding="14,8"/>
+                        <ItemsControl ItemsSource="{Binding Categories}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="14,8"
+                                            Command="{Binding DataContext.FilterByCategoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding Id}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Icon}" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Name}"/>
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Scroll Right Button -->
+                <Button Grid.Column="2" Content="▶" Style="{StaticResource SecondaryButton}"
+                        Width="32" Height="36" Padding="0" Margin="6,0,0,0"
+                        ToolTip="Scroll categories right"
+                        Click="CategoryScrollRight_Click"/>
+            </Grid>
+
+            <!-- Product Grid -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Products}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Margin="0,0,10,10" Cursor="Hand"
+                                    Command="{Binding DataContext.AddToCartCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}">
+                                <Button.Template>
+                                    <ControlTemplate>
+                                        <Border x:Name="card" Width="160" Background="#FFFFFF" CornerRadius="10"
+                                                Padding="14" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Category.Icon}" FontSize="28" Margin="0,0,0,8"/>
+                                                <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="13"
+                                                           FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding SKU}" Foreground="{StaticResource TextMutedBrush}"
+                                                           FontSize="11" Margin="0,2,0,2"/>
+                                                <TextBlock Text="{Binding Unit, StringFormat='📦 {0}'}" Foreground="#0284C7"
+                                                           FontSize="10" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                                <DockPanel>
+                                                    <TextBlock Text="{Binding SellingPrice, Converter={StaticResource Currency}}"
+                                                               Foreground="{StaticResource AccentPrimaryBrush}"
+                                                               FontSize="16" FontWeight="Bold"/>
+                                                    <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                                               Text="{Binding StockQuantity, StringFormat='Stock: {0}'}"
+                                                               Foreground="{StaticResource TextMutedBrush}" FontSize="11"
+                                                               VerticalAlignment="Center"/>
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="card" Property="Background" Value="#F8FAFC"/>
+                                                <Setter TargetName="card" Property="BorderBrush" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- RIGHT: Cart Panel (Crisp White with Subtle Border) -->
+        <Border Grid.Column="1" Background="{StaticResource BgMediumBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1,0,0,0">
+            <DockPanel Margin="16,20">
+                <!-- Cart Header -->
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="🛒 Cart" Style="{StaticResource H3}"/>
+                        <!-- Customer Name with Credit Amount Header Tag -->
+                        <Border Margin="10,0,0,0" Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1"
+                                CornerRadius="6" Padding="8,3" VerticalAlignment="Center"
+                                Visibility="{Binding SelectedCustomer, Converter={StaticResource BoolVis}}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="👤 " FontSize="11" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SelectedCustomer.Name}" Foreground="#92400E" FontWeight="Bold" FontSize="11" MaxWidth="110" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                <TextBlock Text=" • 💳 " FontSize="11" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SelectedCustomer.StoreCredit, Converter={StaticResource Currency}}"
+                                           Foreground="#B45309" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <!-- Sales Person Header Tag -->
+                        <Border Margin="6,0,0,0" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1"
+                                CornerRadius="6" Padding="8,3" VerticalAlignment="Center"
+                                Visibility="{Binding SelectedSalesPerson, Converter={StaticResource BoolVis}}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="🏷️ " FontSize="11" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SelectedSalesPerson.FullName}" Foreground="#3730A3" FontWeight="Bold" FontSize="11" MaxWidth="100" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                <TextBlock Text=" • ⭐ " FontSize="11" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SelectedSalesPerson.LoyaltyPoints, StringFormat='{}{0:N0} pts'}"
+                                           Foreground="#4F46E5" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                               Text="{Binding CartItemCount, StringFormat='{}{0} items'}"
+                               Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <!-- Sales Person Selection & Staff Loyalty Points Area -->
+                <Border DockPanel.Dock="Top" Background="#F8FAFC" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
+                        BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                    <StackPanel>
+                        <!-- Header: Title & Loyalty Points Badge -->
+                        <DockPanel Margin="0,0,0,6">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="🏷️ Sales Person" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                                <TextBlock Text=" (Staff Rewards)" Foreground="{StaticResource TextMutedBrush}" FontSize="11" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                            </StackPanel>
+                            <Border DockPanel.Dock="Right" Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="4" Padding="6,2"
+                                    HorizontalAlignment="Right"
+                                    Visibility="{Binding SelectedSalesPerson, Converter={StaticResource BoolVis}}">
+                                <TextBlock Foreground="#92400E" FontSize="10" FontWeight="Bold">
+                                    <Run Text="⭐ "/>
+                                    <Run Text="{Binding SelectedSalesPerson.LoyaltyPoints, Mode=OneWay, StringFormat='{}{0:N0} pts'}"/>
+                                </TextBlock>
+                            </Border>
+                        </DockPanel>
+
+                        <!-- Sales Person Input Field with Clear & Browse Toggle -->
+                        <Grid Margin="0,0,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid Grid.Column="0">
+                                <TextBox x:Name="SalesPersonSearchTextBox" Style="{StaticResource ModernTextBox}" Height="36"
+                                         Text="{Binding SalesPersonSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="10,0,28,0"
+                                         GotFocus="SalesPersonSearchBox_GotFocus"
+                                         PreviewMouseDown="SalesPersonSearchBox_PreviewMouseDown"
+                                         KeyDown="SalesPersonSearchBox_KeyDown"/>
+
+                                <!-- Watermark Placeholder -->
+                                <TextBlock Text="🔍 Select sales person or staff..."
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           Margin="10,0,0,0"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SalesPersonSearchText}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SalesPersonSearchText}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <!-- Clear Button -->
+                                <Button HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Width="22" Height="22" Padding="0" Margin="0,0,4,0"
+                                        Content="✕" FontSize="10"
+                                        Command="{Binding ClearSalesPersonCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SalesPersonSearchText}" Value="">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SalesPersonSearchText}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+
+                            <!-- Dropdown Toggle Button -->
+                            <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                                    Height="36" Padding="10,0" Margin="6,0,0,0"
+                                    Command="{Binding ToggleSalesPersonDropdownCommand}" ToolTip="Browse all sales staff">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="👥" FontSize="11" Margin="0,0,4,0"/>
+                                    <TextBlock Text="▼" FontSize="9"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- Dropdown List for Sales Persons -->
+                        <Border Background="White" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                CornerRadius="8" Margin="0,4,0,4" MaxHeight="160"
+                                Visibility="{Binding IsSalesPersonDropdownOpen, Converter={StaticResource BoolVis}}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <ItemsControl ItemsSource="{Binding FilteredSalesPersons}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="10,8" Cursor="Hand" Background="Transparent">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding Gesture="LeftClick"
+                                                                      Command="{Binding DataContext.SelectSalesPersonCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                      CommandParameter="{Binding}"/>
+                                                    </Border.InputBindings>
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F8FAFC"/>
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <DockPanel LastChildFill="True">
+                                                        <!-- Right: Loyalty Points -->
+                                                        <Border DockPanel.Dock="Right" Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding LoyaltyPoints, StringFormat='⭐ {0:N0} pts'}" FontSize="10" FontWeight="Bold" Foreground="#92400E"/>
+                                                        </Border>
+                                                        <!-- Left: Full Name & Role -->
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding FullName}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                            <TextBlock Text="{Binding Role, StringFormat='Role: {0}'}" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Selected Sales Person Points Preview Pill -->
+                        <Border Visibility="{Binding SelectedSalesPerson, Converter={StaticResource BoolVis}}"
+                                Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,4,0,0">
+                            <DockPanel LastChildFill="True">
+                                <Button DockPanel.Dock="Right" Content="✕ Change" Style="{StaticResource SecondaryButton}"
+                                        Padding="6,2" FontSize="10" VerticalAlignment="Center"
+                                        Command="{Binding ClearSalesPersonCommand}"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock FontSize="11" FontWeight="Bold" Foreground="#3730A3">
+                                        <Run Text="👤 "/>
+                                        <Run Text="{Binding SelectedSalesPerson.FullName, Mode=OneWay}"/>
+                                        <Run Text=" ("/>
+                                        <Run Text="{Binding SelectedSalesPerson.Role, Mode=OneWay}"/>
+                                        <Run Text=")"/>
+                                    </TextBlock>
+                                    <TextBlock FontSize="10" Foreground="#4F46E5" Margin="0,2,0,0">
+                                        <Run Text="Points Balance: "/>
+                                        <Run Text="{Binding SelectedSalesPerson.LoyaltyPoints, Mode=OneWay, StringFormat='{}{0:N0} pts'}"/>
+                                        <Run Text="  •  This Sale: "/>
+                                        <Run Text="{Binding SalesPersonPointsEarnedThisSale, Mode=OneWay, StringFormat='+{0} pts'}" FontWeight="Bold"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Customer Selection & Credit Rewards Area -->
+                <Border DockPanel.Dock="Top" Background="#F8FAFC" CornerRadius="10" Padding="14,12" Margin="0,0,0,14"
+                        BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1">
+                    <StackPanel>
+                        <!-- Header: Title & Add New Button -->
+                        <DockPanel Margin="0,0,0,8">
+                            <TextBlock Text="👤 Customer Rewards" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                            <Button DockPanel.Dock="Right" Content="➕ Add New" Style="{StaticResource SuccessButton}"
+                                    Padding="10,4" FontSize="11" HorizontalAlignment="Right"
+                                    Command="{Binding OpenQuickAddCustomerCommand}"/>
+                        </DockPanel>
+
+                        <!-- ALWAYS VISIBLE: Search / Customer Input Field with Clear & Browse Toggle -->
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid Grid.Column="0">
+                                <TextBox x:Name="CustomerSearchTextBox" Style="{StaticResource ModernTextBox}" Height="40"
+                                         Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="12,0,32,0"
+                                         GotFocus="CustomerSearchBox_GotFocus"
+                                         PreviewMouseDown="CustomerSearchBox_PreviewMouseDown"
+                                         KeyDown="CustomerSearchBox_KeyDown"/>
+
+                                <!-- In-box Watermark / Placeholder (Visible when CustomerSearchText is empty) -->
+                                <TextBlock Text="🔍 Search name, phone or code..."
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           FontSize="13"
+                                           VerticalAlignment="Center"
+                                           Margin="12,0,0,0"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CustomerSearchText}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding CustomerSearchText}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <!-- In-box Clear Button '✕' when customer is selected or text is entered -->
+                                <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0"
+                                        Width="26" Height="26"
+                                        Padding="0" ToolTip="Clear / change selected customer"
+                                        Command="{Binding ClearCustomerCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CustomerSearchText}" Value="">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding CustomerSearchText}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <TextBlock Text="✕" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
+                                </Button>
+                            </Grid>
+
+                            <!-- Dropdown / Browse Arrow -->
+                            <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Height="40" Width="40" Margin="6,0,0,0"
+                                    Command="{Binding ToggleCustomerDropdownCommand}" ToolTip="Browse all customers">
+                                <Path Width="10" Height="6" Stretch="Fill" Fill="{StaticResource TextSecondaryBrush}"
+                                      Data="M 0 0 L 5 5 L 10 0 Z"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Hint Text when closed and no customer selected -->
+                        <TextBlock Text="🔍 Type name, phone or code to search &amp; select customer"
+                                   FontSize="11" Margin="2,2,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsCustomerDropdownOpen}" Value="False"/>
+                                                <Condition Binding="{Binding SelectedCustomer}" Value="{x:Null}"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Search Results / Customer Dropdown List -->
+                        <Border Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                CornerRadius="8" Margin="0,6,0,0" MaxHeight="220"
+                                Visibility="{Binding IsCustomerDropdownOpen, Converter={StaticResource BoolVis}}">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="10" Direction="270" ShadowDepth="2" Opacity="0.10"/>
+                            </Border.Effect>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <!-- Customer Items List -->
+                                    <ItemsControl ItemsSource="{Binding FilteredCustomers}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="12,9" Cursor="Hand" Background="Transparent">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding Gesture="LeftClick"
+                                                                      Command="{Binding DataContext.SelectCustomerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                      CommandParameter="{Binding}"/>
+                                                    </Border.InputBindings>
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F8FAFC"/>
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <DockPanel LastChildFill="True">
+                                                        <!-- Right: Credit Badge & Points -->
+                                                        <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10,0,0,0">
+                                                            <Border Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="4" Padding="6,2" HorizontalAlignment="Right">
+                                                                <TextBlock Text="{Binding StoreCredit, Converter={StaticResource Currency}, StringFormat='Debt: {0}'}"
+                                                                           Foreground="#B45309" FontWeight="Bold" FontSize="11"/>
+                                                            </Border>
+                                                            <TextBlock Text="{Binding LoyaltyPoints, StringFormat='⭐ {0:F0} pts'}"
+                                                                       Foreground="{StaticResource TextMutedBrush}" FontSize="10" HorizontalAlignment="Right" Margin="0,3,0,0"/>
+                                                        </StackPanel>
+
+                                                        <!-- Left: Name & Contact Details -->
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                            <TextBlock Style="{StaticResource CaptionText}" FontSize="11" Margin="0,2,0,0">
+                                                                <Run Text="📞 "/>
+                                                                <Run Text="{Binding Phone, Mode=OneWay}"/>
+                                                                <Run Text="  •  "/>
+                                                                <Run Text="{Binding Code, Mode=OneWay}"/>
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!-- No Results Found Message & Quick Add Action -->
+                                    <StackPanel Margin="14" HorizontalAlignment="Center"
+                                                Visibility="{Binding FilteredCustomers.Count, Converter={StaticResource BoolVis}, ConverterParameter=Invert}">
+                                        <TextBlock Text="No customer found matching search" Style="{StaticResource CaptionText}"
+                                                    HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                        <Button Style="{StaticResource PrimaryButton}" Content="➕ Add as New Customer"
+                                                Padding="12,6" FontSize="11"
+                                                Command="{Binding OpenQuickAddCustomerCommand}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- When Customer is Selected: Show Contact Details, Store Credit & Loyalty Badges -->
+                        <StackPanel Margin="0,8,0,0" Visibility="{Binding SelectedCustomer, Converter={StaticResource BoolVis}}">
+                            <DockPanel Margin="0,0,0,6">
+                                <TextBlock Style="{StaticResource CaptionText}" FontSize="11" VerticalAlignment="Center">
+                                    <Run Text="📞 "/>
+                                    <Run Text="{Binding SelectedCustomer.Phone, Mode=OneWay}"/>
+                                    <Run Text="  •  Code: "/>
+                                    <Run Text="{Binding SelectedCustomer.Code, Mode=OneWay}"/>
+                                </TextBlock>
+                                <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Content="✕ Change Customer"
+                                        Style="{StaticResource SecondaryButton}" Padding="8,3" FontSize="10"
+                                        Command="{Binding ClearCustomerCommand}" ToolTip="Remove or change selected customer"/>
+                            </DockPanel>
+
+                            <!-- Prominent Customer Debt Banner -->
+                            <Border Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1.5" CornerRadius="8" Padding="12,10" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="💳 CUSTOMER DEBT" Foreground="#92400E" FontWeight="Bold" FontSize="11"/>
+                                            <TextBlock Text="Outstanding balance" Foreground="#B45309" FontSize="10" Margin="0,1,0,0"/>
+                                        </StackPanel>
+                                        <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                                   Text="{Binding SelectedCustomer.StoreCredit, Converter={StaticResource Currency}}"
+                                                   Foreground="#B45309" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
+                                    </DockPanel>
+
+                                    <!-- If Debt is Added to Today's Bill -->
+                                    <Border Margin="0,8,0,0" Padding="10,6" Background="#FEF2F2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6"
+                                            Visibility="{Binding AppliedStoreCredit, Converter={StaticResource PosVis}}">
+                                        <DockPanel LastChildFill="True">
+                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="6,0,0,0">
+                                                <Button Content="✏️ Edit" Style="{StaticResource SecondaryButton}" Padding="6,2" FontSize="10" Margin="0,0,4,0"
+                                                        Command="{Binding OpenCreditDialogCommand}" ToolTip="Adjust added customer debt"/>
+                                                <Button Content="✕ Remove" Style="{StaticResource DangerButton}" Padding="6,2" FontSize="10"
+                                                        Command="{Binding RemoveAppliedCreditCommand}" ToolTip="Remove past debt from this bill"/>
+                                            </StackPanel>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Foreground="#B91C1C" FontWeight="Bold" FontSize="11">
+                                                    <Run Text="➕ Added to Bill: +"/>
+                                                    <Run Text="{Binding AppliedStoreCredit, Mode=OneWay, Converter={StaticResource Currency}}"/>
+                                                </TextBlock>
+                                                <TextBlock FontSize="10" Foreground="#DC2626" Margin="0,1,0,0">
+                                                    <Run Text="Remaining debt: "/>
+                                                    <Run Text="{Binding RemainingCustomerDebt, Mode=OneWay, Converter={StaticResource Currency}}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+
+                                    <!-- If Debt is available and not yet applied -->
+                                    <Button Margin="0,8,0,0" Padding="10,6" FontSize="11"
+                                            Content="💳 Add Debt to Today's Bill"
+                                            Command="{Binding OpenCreditDialogCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding AppliedStoreCredit}" Value="0"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Loyalty Rewards Badges -->
+                            <WrapPanel>
+                                <Border Background="#E0F2FE" BorderBrush="#BAE6FD" BorderThickness="1" CornerRadius="4" Padding="8,3" Margin="0,0,6,0">
+                                    <TextBlock Text="{Binding SelectedCustomer.LoyaltyPoints, StringFormat='⭐ Balance: {0:N0} pts'}"
+                                               Foreground="#0284C7" FontSize="11" FontWeight="SemiBold"/>
+                                </Border>
+                                <Border Background="#D1FAE5" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="4" Padding="8,3">
+                                    <TextBlock Text="{Binding PointsEarnedThisSale, StringFormat='🎁 +{0} pts today'}"
+                                               Foreground="#065F46" FontSize="11" FontWeight="SemiBold"/>
+                                </Border>
+                            </WrapPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Cart Actions at Bottom -->
+                <StackPanel DockPanel.Dock="Bottom">
+                    <!-- Real-time Cross-selling Prompts / Frequently Bought Together -->
+                    <Border Background="#F0FDF4" BorderBrush="#BBF7D0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,8"
+                            Visibility="{Binding IsCrossSellingVisible, Converter={StaticResource BoolVis}}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,6">
+                                <Button DockPanel.Dock="Right" Content="✕" Width="22" Height="22" Padding="0" Margin="8,0,0,0"
+                                        Style="{StaticResource SecondaryButton}"
+                                        Command="{Binding DismissCrossSellingCommand}"
+                                        ToolTip="Close / Dismiss suggestions" Cursor="Hand" FontSize="11" FontWeight="Bold"
+                                        Background="#DCFCE7" BorderThickness="0" Foreground="#166534"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="Quick Add" Foreground="#15803D" FontSize="10" DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                <TextBlock Text="⚡ Frequently Bought Together" Foreground="#166534" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding CrossSellingSuggestions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#FFFFFF" BorderBrush="#DCFCE7" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,2">
+                                            <DockPanel LastChildFill="True">
+                                                <Button DockPanel.Dock="Right" Style="{StaticResource SuccessButton}" Padding="8,3" FontSize="10" FontWeight="Bold"
+                                                        Command="{Binding DataContext.AddSuggestedProductCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}">
+                                                    <TextBlock Text="{Binding SellingPrice, Converter={StaticResource Currency}, StringFormat='➕ {0}'}"/>
+                                                </Button>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Category.Icon}" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" Foreground="#14532D"
+                                                               MaxWidth="160" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Totals -->
+                    <Border Background="#F8F9FA" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,4,0,0">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,6">
+                                <TextBlock Text="Subtotal" Style="{StaticResource BodyText}"/>
+                                <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                           Text="{Binding CartSubTotal, Converter={StaticResource Currency}}"
+                                           Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Medium"/>
+                            </DockPanel>
+
+                            <!-- Past Debt Added Line -->
+                            <DockPanel Margin="0,0,0,6" Visibility="{Binding AppliedStoreCredit, Converter={StaticResource PosVis}}">
+                                <TextBlock Text="➕ Past Debt Added" Foreground="#D97706" FontWeight="SemiBold" Style="{StaticResource BodyText}"/>
+                                <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                           Text="{Binding AppliedStoreCredit, Converter={StaticResource Currency}, StringFormat='+{0}'}"
+                                           Foreground="#D97706" FontWeight="Bold"/>
+                            </DockPanel>
+
+                            <Border Height="1" Background="{StaticResource BorderSubtleBrush}" Margin="0,6"/>
+                            <DockPanel Margin="0,6,0,0">
+                                <TextBlock Text="TOTAL DUE" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" FontWeight="Bold"/>
+                                <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                           Text="{Binding CartGrandTotal, Converter={StaticResource Currency}}"
+                                           Foreground="{StaticResource AccentPrimaryBrush}"
+                                           FontSize="24" FontWeight="Bold"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Action Buttons: Undo, Park, Void -->
+                    <UniformGrid Columns="3" Margin="0,10,0,0">
+                        <Button Style="{StaticResource SecondaryButton}" Content="↩️ Undo" Margin="0,0,4,0"
+                                Command="{Binding UndoLastItemCommand}" ToolTip="Undo last cart item or quantity change (Ctrl+Z)"/>
+                        <Button Style="{StaticResource SecondaryButton}" Content="📌 Park" Margin="2,0,2,0"
+                                Command="{Binding ParkCurrentOrderCommand}" ToolTip="Park current order into held tray (F6)"/>
+                        <Button Style="{StaticResource DangerButton}" Content="🚫 Void" Margin="4,0,0,0"
+                                Command="{Binding OpenVoidModalCommand}" ToolTip="Void bill with security audit logging (F4)"/>
+                    </UniformGrid>
+                    <!-- Checkout: Emerald Green Button -->
+                    <Button Style="{StaticResource SuccessButton}" Content="💳  Pay Now [F5]" Margin="0,8,0,0"
+                            Command="{Binding OpenPaymentCommand}" FontSize="16" Padding="20,14" ToolTip="Process payment (F5)"/>
+                </StackPanel>
+
+                <!-- Cart Items List -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding CartItems}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#F8F9FA" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Visual Category Icon Badge -->
+                                        <Border Grid.Column="0" Width="36" Height="36" Background="#EEF2F6" BorderBrush="#E2E8F0" BorderThickness="1"
+                                                CornerRadius="8" Margin="0,0,10,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding CategoryIcon}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding ProductName}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                       FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,2,0,6">
+                                                <TextBlock Text="{Binding UnitPrice, Converter={StaticResource Currency}}"
+                                                           Foreground="{StaticResource TextMutedBrush}" FontSize="12"/>
+                                                <TextBlock Text="{Binding Unit, StringFormat=' / {0}'}"
+                                                           Foreground="{StaticResource TextMutedBrush}" FontSize="11" VerticalAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <!-- Quantity controls: − [Manual Editable TextBox] + -->
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Width="26" Height="26" Content="−" FontSize="15"
+                                                        Style="{StaticResource SecondaryButton}" Padding="0"
+                                                        Command="{Binding DataContext.DecreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                                <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, TargetNullValue=1}"
+                                                         Width="44" Height="26" Margin="4,0" MaxLength="4"
+                                                         TextAlignment="Center" VerticalContentAlignment="Center"
+                                                         FontWeight="Bold" FontSize="12"
+                                                         Background="#FFFFFF" Foreground="{StaticResource TextPrimaryBrush}"
+                                                         BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                         PreviewTextInput="QuantityTextBox_PreviewTextInput"
+                                                         LostFocus="QuantityTextBox_LostFocus"
+                                                         GotFocus="QuantityTextBox_GotFocus"
+                                                         KeyDown="QuantityTextBox_KeyDown"
+                                                         ToolTip="Click to type quantity manually"/>
+                                                <Button Width="26" Height="26" Content="+" FontSize="15"
+                                                        Style="{StaticResource SecondaryButton}" Padding="0"
+                                                        Command="{Binding DataContext.IncreaseQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding LineTotal, Converter={StaticResource Currency}}"
+                                                       Foreground="{StaticResource AccentPrimaryBrush}"
+                                                       FontSize="15" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                            <Button Content="✕" Style="{StaticResource SecondaryButton}" FontSize="11"
+                                                    HorizontalAlignment="Right" Padding="6,2" Margin="0,4,0,0"
+                                                    Command="{Binding DataContext.RemoveFromCartCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" ToolTip="Remove item"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </Grid>
+
+    <!-- BOTTOM SHORTCUT GUIDE BAR (Grid.Row="1") -->
+    <Border Grid.Row="1" Background="#0F172A" Padding="14,8" BorderBrush="#1E293B" BorderThickness="0,1,0,0">
+        <DockPanel LastChildFill="False">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Background="#1E293B" CornerRadius="4" Padding="5,2" Margin="0,0,4,0">
+                    <TextBlock Text="F1" Foreground="#38BDF8" FontWeight="Bold" FontSize="11"/>
+                </Border>
+                <TextBlock Text="Search" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                <Border Background="#1E293B" CornerRadius="4" Padding="5,2" Margin="0,0,4,0">
+                    <TextBlock Text="F2" Foreground="#38BDF8" FontWeight="Bold" FontSize="11"/>
+                </Border>
+                <TextBlock Text="Customer" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                <Border Background="#1E293B" CornerRadius="4" Padding="5,2" Margin="0,0,4,0">
+                    <TextBlock Text="F3" Foreground="#38BDF8" FontWeight="Bold" FontSize="11"/>
+                </Border>
+                <TextBlock Text="Quick Item" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                <Border Background="#1E293B" CornerRadius="4" Padding="5,2" Margin="0,0,4,0">
+                    <TextBlock Text="F4" Foreground="#F87171" FontWeight="Bold" FontSize="11"/>
+                </Border>
+                <TextBlock Text="Void Bill" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                <Border Background="#1E293B" CornerRadius="4" Padding="5,2" Margin="0,0,4,0">
+                    <TextBlock Text="F5" Foreground="#4ADE80" FontWeight="Bold" FontSize="11"/>
+                </Border>
+                <TextBlock Text="Pay Now" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                <Border Background="#1E293B" CornerRadius="4" Padding="5,2" Margin="0,0,4,0">
+                    <TextBlock Text="F6" Foreground="#FBBF24" FontWeight="Bold" FontSize="11"/>
+                </Border>
+                <TextBlock Text="Park Order" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                <Border Background="#1E293B" CornerRadius="4" Padding="5,2" Margin="0,0,4,0">
+                    <TextBlock Text="F7" Foreground="#FBBF24" FontWeight="Bold" FontSize="11"/>
+                </Border>
+                <TextBlock Text="Held Tray" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                <Border Background="#1E293B" CornerRadius="4" Padding="5,2" Margin="0,0,4,0">
+                    <TextBlock Text="Ctrl+Z" Foreground="#A78BFA" FontWeight="Bold" FontSize="11"/>
+                </Border>
+                <TextBlock Text="Undo" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                <Border Background="#1E293B" CornerRadius="4" Padding="5,2" Margin="0,0,4,0">
+                    <TextBlock Text="Esc" Foreground="#94A3B8" FontWeight="Bold" FontSize="11"/>
+                </Border>
+                <TextBlock Text="Close Modal" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Held Orders badge button in shortcut bar -->
+            <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Padding="10,3" Height="26"
+                    Command="{Binding ToggleHeldDrawerCommand}" Background="#1E293B" BorderBrush="#334155"
+                    ToolTip="View held / parked orders tray (F7)">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📌 Held Orders: " Foreground="#94A3B8" FontSize="11"/>
+                    <TextBlock Text="{Binding HeldOrdersCount}" Foreground="#FBBF24" FontWeight="Bold" FontSize="11"/>
+                </StackPanel>
+            </Button>
+        </DockPanel>
+    </Border>
+
+    <!-- PAYMENT OVERLAY -->
+    <Grid Grid.RowSpan="2" Grid.ColumnSpan="2" Panel.ZIndex="50"
+          Visibility="{Binding ShowPaymentPanel, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="520" MaxHeight="720" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Header with close button -->
+                        <DockPanel Margin="0,0,0,14">
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="💳 Process Payment" Style="{StaticResource H2}"/>
+                                <TextBlock Text="Review selected items and complete payment" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Button DockPanel.Dock="Right" Content="✕" Style="{StaticResource SecondaryButton}"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" Padding="8,4" FontSize="14"
+                                    Command="{Binding ClosePaymentCommand}" ToolTip="Close payment dialog"/>
+                        </DockPanel>
+
+                        <!-- Customer Debt in Payment Panel -->
+                        <Border Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,12"
+                                Visibility="{Binding SelectedCustomer, Converter={StaticResource NullVis}}">
+                            <DockPanel>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedCustomer.Name, StringFormat='👤 {0}'}"
+                                               Foreground="#92400E" FontWeight="Bold" FontSize="13"/>
+                                    <TextBlock Text="Customer Debt" Foreground="#B45309" FontSize="11" Margin="0,1,0,0"/>
+                                </StackPanel>
+                                <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right" Orientation="Horizontal">
+                                    <TextBlock Text="{Binding SelectedCustomer.StoreCredit, Converter={StaticResource Currency}}"
+                                               Foreground="#B45309" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <Button Content="Add Debt" Style="{StaticResource SecondaryButton}" Padding="12,5" FontSize="12"
+                                            Command="{Binding OpenCreditDialogCommand}" ToolTip="Adjust or add customer debt to this bill"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Sales Person Attribution in Payment Panel -->
+                        <Border Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,0,0,12"
+                                Visibility="{Binding SelectedSalesPerson, Converter={StaticResource NullVis}}">
+                            <DockPanel>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedSalesPerson.FullName, StringFormat='🏷️ Sales Person: {0}'}"
+                                               Foreground="#3730A3" FontWeight="Bold" FontSize="13"/>
+                                    <TextBlock Foreground="#4F46E5" FontSize="11" Margin="0,1,0,0">
+                                        <Run Text="Role: "/>
+                                        <Run Text="{Binding SelectedSalesPerson.Role, Mode=OneWay}"/>
+                                        <Run Text=" • Staff points to earn: "/>
+                                        <Run Text="{Binding SalesPersonPointsEarnedThisSale, Mode=OneWay, StringFormat='+{0} pts'}" FontWeight="Bold"/>
+                                    </TextBlock>
+                                </StackPanel>
+                                <Border DockPanel.Dock="Right" HorizontalAlignment="Right" Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedSalesPerson.LoyaltyPoints, StringFormat='⭐ {0:N0} pts'}"
+                                               Foreground="#92400E" FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Selected Items List -->
+                        <Border Background="#F8F9FA" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,14">
+                            <StackPanel>
+                                <!-- Header -->
+                                <DockPanel Margin="0,0,0,6">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="🛒 Selected Items" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <Border Background="#E2E8F0" CornerRadius="10" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding CartItemCount, StringFormat='{}{0} items'}" FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}" FontWeight="SemiBold"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock DockPanel.Dock="Right" Text="Total" FontWeight="SemiBold" FontSize="12"
+                                               Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </DockPanel>
+
+                                <!-- Table Header -->
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="80"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="ITEM" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}"/>
+                                    <TextBlock Grid.Column="1" Text="QTY × PRICE" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" Margin="8,0"/>
+                                    <TextBlock Grid.Column="2" Text="SUBTOTAL" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Border Height="1" Background="{StaticResource BorderSubtleBrush}" Margin="0,0,0,4"/>
+
+                                <!-- Scrollable Cart Items List -->
+                                <ScrollViewer MaxHeight="140" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding CartItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#EDF2F7" BorderThickness="0,0,0,1" Padding="0,5">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="80"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Name & SKU -->
+                                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding ProductName}" FontWeight="SemiBold" FontSize="12"
+                                                                       Foreground="{StaticResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Sku, StringFormat='SKU: {0}'}" FontSize="10"
+                                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                                       Visibility="{Binding Sku.Length, Converter={StaticResource BoolVis}}"/>
+                                                        </StackPanel>
+
+                                                        <!-- Quantity × UnitPrice -->
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                                                            <TextBlock Text="{Binding Quantity}" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                            <TextBlock Text=" × " FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                                                            <TextBlock Text="{Binding UnitPrice, Converter={StaticResource Currency}}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                                                        </StackPanel>
+
+                                                        <!-- Line Total -->
+                                                        <TextBlock Grid.Column="2" Text="{Binding LineTotal, Converter={StaticResource Currency}}"
+                                                                   FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+
+                                <!-- Subtotal, Tax, Applied Past Debt Breakdown -->
+                                <Border BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="0,1,0,0" Margin="0,6,0,0" Padding="0,6,0,0">
+                                    <StackPanel>
+                                        <DockPanel Margin="0,0,0,3">
+                                            <TextBlock Text="Subtotal" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding CartSubTotal, Converter={StaticResource Currency}}"
+                                                       FontSize="11" Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                        <DockPanel Margin="0,0,0,2" Visibility="{Binding AppliedStoreCredit, Converter={StaticResource PosVis}}">
+                                            <TextBlock Text="➕ Past Debt Added" FontSize="11" Foreground="#D97706" FontWeight="SemiBold"/>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding AppliedStoreCredit, Converter={StaticResource Currency}, StringFormat='+{0}'}"
+                                                       FontSize="11" Foreground="#D97706" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Total Due Line -->
+                        <DockPanel Margin="0,0,0,14">
+                            <TextBlock Text="Total Due:" Style="{StaticResource BodyText}" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="15"/>
+                            <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                       Text="{Binding CartGrandTotal, Converter={StaticResource Currency}}"
+                                       Foreground="{StaticResource AccentPrimaryBrush}"
+                                       FontSize="26" FontWeight="Bold"/>
+                        </DockPanel>
+
+                        <!-- Quick Cash -->
+                        <TextBlock Text="Quick Cash" Style="{StaticResource CaptionText}" Margin="0,0,0,8"/>
+                        <UniformGrid Columns="4" Margin="0,0,0,14">
+                            <Button Style="{StaticResource SecondaryButton}" Content="₹10" Margin="0,0,4,0"
+                                    Command="{Binding SetQuickCashCommand}" CommandParameter="10"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="₹50" Margin="2,0"
+                                    Command="{Binding SetQuickCashCommand}" CommandParameter="50"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="₹100" Margin="2,0"
+                                    Command="{Binding SetQuickCashCommand}" CommandParameter="100"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="₹500" Margin="4,0,0,0"
+                                    Command="{Binding SetQuickCashCommand}" CommandParameter="500"/>
+                        </UniformGrid>
+
+                        <!-- Amount Input -->
+                        <TextBlock Text="AMOUNT TENDERED" Style="{StaticResource CaptionText}" Margin="0,0,0,6" FontWeight="SemiBold"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" FontSize="22" FontWeight="Bold"
+                                 Text="{Binding PaymentAmount, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                        <!-- Partial Payment Notice: When customer underpays (e.g. pays 150 of 200), remaining 50 added to debt -->
+                        <Border Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1.5" CornerRadius="8" Padding="14" Margin="0,0,0,14"
+                                Visibility="{Binding IsPartialPaymentWithDebt, Converter={StaticResource BoolVis}}">
+                            <StackPanel>
+                                <DockPanel>
+                                    <TextBlock Text="💳 Remaining Debt to Add:" Foreground="#92400E" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                               Text="{Binding UnpaidDebtAmount, Converter={StaticResource Currency}}"
+                                               Foreground="#B45309" FontSize="20" FontWeight="Bold"/>
+                                </DockPanel>
+                                <TextBlock Margin="0,4,0,0" FontSize="11" Foreground="#78350F" TextWrapping="Wrap">
+                                    <Run Text="This "/>
+                                    <Run Text="{Binding UnpaidDebtAmount, Converter={StaticResource Currency}}" FontWeight="Bold"/>
+                                    <Run Text=" will be recorded as debt in "/>
+                                    <Run Text="{Binding SelectedCustomer.Name}" FontWeight="Bold"/>
+                                    <Run Text="'s account balance."/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Partial Payment Warning: When paying less than total but NO customer is selected -->
+                        <Border Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1.5" CornerRadius="8" Padding="12" Margin="0,0,0,14"
+                                Visibility="{Binding IsPartialPaymentWithoutCustomer, Converter={StaticResource BoolVis}}">
+                            <StackPanel>
+                                <TextBlock Text="⚠️ CUSTOMER REQUIRED FOR PARTIAL PAYMENT" Foreground="#991B1B" FontSize="12" FontWeight="Bold"/>
+                                <TextBlock Margin="0,2,0,0" FontSize="11" Foreground="#7F1D1D" TextWrapping="Wrap"
+                                           Text="You are tendering less than total due. Please close payment and select a customer so the remaining debt can be tracked."/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Change: Emerald Green -->
+                        <Border Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,16"
+                                Visibility="{Binding IsPartialPaymentWithDebt, Converter={StaticResource BoolVis}, ConverterParameter=Invert}">
+                            <DockPanel>
+                                <TextBlock Text="Change:" Foreground="#065F46" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                           Text="{Binding ChangeAmount, Converter={StaticResource Currency}}"
+                                           Foreground="#047857" FontSize="22" FontWeight="Bold"/>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Payment Status Message / Validation Warning -->
+                        <TextBlock Text="{Binding PaymentStatus}" Foreground="{StaticResource AccentDangerBrush}"
+                                   FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12" TextWrapping="Wrap"
+                                   Visibility="{Binding PaymentStatus.Length, Converter={StaticResource PosVis}}"/>
+
+                        <!-- Buttons: Checkout completion in Emerald Green -->
+                        <UniformGrid Columns="2">
+                            <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="0,0,6,0"
+                                    Command="{Binding ClosePaymentCommand}"/>
+                            <Button Style="{StaticResource SuccessButton}" Content="✅ Complete Payment" Margin="6,0,0,0"
+                                    Command="{Binding ProcessPaymentCommand}"/>
+                        </UniformGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- RECEIPT PREVIEW MODAL -->
+        <Grid Grid.RowSpan="2" Grid.ColumnSpan="2" Panel.ZIndex="60"
+              Visibility="{Binding ShowReceiptModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="440" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,16">
+                        <TextBlock Text="🧾 Receipt Preview" Style="{StaticResource H2}" VerticalAlignment="Center"/>
+                        <Button DockPanel.Dock="Right" Content="✕" Style="{StaticResource SecondaryButton}"
+                                HorizontalAlignment="Right" Padding="8,4" FontSize="14"
+                                Command="{Binding CloseReceiptModalCommand}"/>
+                    </DockPanel>
+
+                    <!-- Receipt Paper Display -->
+                    <Border Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="16" Margin="0,0,0,16" MaxHeight="380">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <TextBox Text="{Binding CurrentReceiptText, Mode=OneWay}"
+                                     FontFamily="Consolas" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                     Background="Transparent" BorderThickness="0"
+                                     IsReadOnly="True" TextWrapping="Wrap"/>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Print Confirmation Banner -->
+                    <TextBlock Text="{Binding PrintConfirmation}" Foreground="{StaticResource AccentSuccessBrush}"
+                               FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,12"
+                               Visibility="{Binding PrintConfirmation.Length, Converter={StaticResource BoolVis}}"/>
+
+                    <!-- Action Buttons -->
+                    <UniformGrid Columns="3">
+                        <Button Style="{StaticResource PrimaryButton}" Content="🖨️ Print" Margin="0,0,4,0"
+                                Command="{Binding PrintReceiptCommand}"/>
+                        <Button Style="{StaticResource SecondaryButton}" Content="💾 Download" Margin="2,0"
+                                Command="{Binding DownloadReceiptCommand}"/>
+                        <Button Style="{StaticResource SuccessButton}" Content="➕ New Sale" Margin="4,0,0,0"
+                                Command="{Binding CloseReceiptModalCommand}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- QUICK ADD CUSTOMER MODAL -->
+        <Grid Grid.RowSpan="2" Grid.ColumnSpan="2" Panel.ZIndex="70"
+              Visibility="{Binding ShowQuickAddCustomerModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="400" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <StackPanel>
+                    <TextBlock Text="👤 Quick Add Customer" Style="{StaticResource H2}" Margin="0,0,0,20"/>
+
+                    <TextBlock Text="CUSTOMER NAME *" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding QuickCustomerName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="PHONE NUMBER" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding QuickCustomerPhone, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="INITIAL DEBT AMOUNT" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding QuickCustomerCredit, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,20"/>
+
+                    <TextBlock Text="{Binding QuickCustomerMessage}" Foreground="{StaticResource AccentDangerBrush}"
+                               FontSize="12" Margin="0,0,0,16" TextWrapping="Wrap"
+                               Visibility="{Binding QuickCustomerMessage.Length, Converter={StaticResource BoolVis}}"/>
+
+                    <UniformGrid Columns="2">
+                        <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="0,0,6,0"
+                                Command="{Binding CloseQuickAddCustomerCommand}"/>
+                        <Button Style="{StaticResource SuccessButton}" Content="💾 Save Customer" Margin="6,0,0,0"
+                                Command="{Binding SaveQuickCustomerCommand}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- CUSTOMER DEBT APPLICATION MODAL -->
+        <Grid Grid.RowSpan="2" Grid.ColumnSpan="2" Panel.ZIndex="65"
+              Visibility="{Binding ShowCreditDialog, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="460" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <StackPanel>
+                    <!-- Header -->
+                    <DockPanel Margin="0,0,0,14">
+                        <TextBlock Text="💳 Customer Outstanding Debt" Style="{StaticResource H2}" VerticalAlignment="Center"/>
+                        <Button DockPanel.Dock="Right" Content="✕" Style="{StaticResource SecondaryButton}"
+                                HorizontalAlignment="Right" Padding="8,4" FontSize="14"
+                                Command="{Binding DismissCreditDialogCommand}" ToolTip="Close without adding debt"/>
+                    </DockPanel>
+
+                    <TextBlock Text="This customer has an outstanding debt. Would you like to add it to today's bill?"
+                               Style="{StaticResource BodyText}" TextWrapping="Wrap" Margin="0,0,0,14" Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                    <!-- Customer & Debt Available Banner -->
+                    <Border Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1.5" CornerRadius="8" Padding="14,12" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SelectedCustomer.Name, StringFormat='👤 {0}'}"
+                                           FontWeight="Bold" FontSize="15" Foreground="#92400E"/>
+                                <TextBlock Text="{Binding SelectedCustomer.Phone, StringFormat='📞 {0}'}"
+                                           FontSize="11" Foreground="#B45309" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock Text="OUTSTANDING DEBT" FontSize="10" FontWeight="Bold" Foreground="#92400E" HorizontalAlignment="Right"/>
+                                <TextBlock Text="{Binding SelectedCustomer.StoreCredit, Converter={StaticResource Currency}}"
+                                           FontWeight="Bold" FontSize="20" Foreground="#B45309" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Today's Items Status Info -->
+                    <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
+                        <DockPanel>
+                            <TextBlock Text="Today's Current Items Total:" Style="{StaticResource BodyText}" VerticalAlignment="Center"/>
+                            <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                       Text="{Binding BillTotalBeforeCredit, Converter={StaticResource Currency}}"
+                                       FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Input Section Label -->
+                    <TextBlock Text="HOW MUCH DEBT TO ADD TO TODAY'S BILL?" Style="{StaticResource InputLabel}"/>
+
+                    <!-- Quick Preset Buttons -->
+                    <WrapPanel Margin="0,0,0,10">
+                        <Button Style="{StaticResource SecondaryButton}" Content="⚡ Add Full Debt" Margin="0,0,6,6" Padding="10,5" FontSize="11"
+                                Command="{Binding SetCreditPresetCommand}" CommandParameter="full_debt"
+                                ToolTip="Add full customer debt to today's bill"/>
+                        <Button Style="{StaticResource SecondaryButton}" Content="₹10" Margin="0,0,6,6" Padding="10,5" FontSize="11"
+                                Command="{Binding SetCreditPresetCommand}" CommandParameter="10"/>
+                        <Button Style="{StaticResource SecondaryButton}" Content="₹20" Margin="0,0,6,6" Padding="10,5" FontSize="11"
+                                Command="{Binding SetCreditPresetCommand}" CommandParameter="20"/>
+                        <Button Style="{StaticResource SecondaryButton}" Content="₹50" Margin="0,0,6,6" Padding="10,5" FontSize="11"
+                                Command="{Binding SetCreditPresetCommand}" CommandParameter="50"/>
+                        <Button Style="{StaticResource SecondaryButton}" Content="₹100" Margin="0,0,6,6" Padding="10,5" FontSize="11"
+                                Command="{Binding SetCreditPresetCommand}" CommandParameter="100"/>
+                        <Button Style="{StaticResource SecondaryButton}" Content="₹500" Margin="0,0,6,6" Padding="10,5" FontSize="11"
+                                Command="{Binding SetCreditPresetCommand}" CommandParameter="500"/>
+                    </WrapPanel>
+
+                    <!-- Amount Input Box -->
+                    <Grid Margin="0,0,0,10">
+                        <TextBox Style="{StaticResource ModernTextBox}" Height="42" FontSize="16" FontWeight="Bold"
+                                 Text="{Binding CreditAmountToApply, UpdateSourceTrigger=PropertyChanged}"
+                                 Padding="12,0,10,0"/>
+                    </Grid>
+
+                    <!-- Error / Hint Message -->
+                    <TextBlock Text="{Binding CreditDialogErrorMessage}" Foreground="{StaticResource AccentDangerBrush}"
+                               FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap"
+                               Visibility="{Binding CreditDialogErrorMessage.Length, Converter={StaticResource PosVis}}"/>
+
+                    <!-- Action Buttons -->
+                    <UniformGrid Columns="2" Margin="0,4,0,0">
+                        <Button Style="{StaticResource SecondaryButton}" Content="✕ Don't Add (Skip)" Margin="0,0,6,0"
+                                Command="{Binding CloseCreditDialogCommand}" ToolTip="Proceed to payment without adding past debt"/>
+                        <Button Style="{StaticResource SuccessButton}" Content="➕ Add to Bill" Margin="6,0,0,0"
+                                Command="{Binding ApplyCreditToBillCommand}" ToolTip="Add debt to today's bill and proceed to payment"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- QUICK MANUAL PRODUCT ADD MODAL -->
+        <Grid Grid.RowSpan="2" Grid.ColumnSpan="2" Panel.ZIndex="120" Visibility="{Binding ShowQuickProductModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="480" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,16">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="✕"
+                                Command="{Binding CloseQuickProductCommand}" Width="32" Height="32" Padding="0"/>
+                        <StackPanel>
+                            <TextBlock Text="➕ Quick Manual Product" Style="{StaticResource H2}"/>
+                            <TextBlock Text="Add an unlisted item on-the-fly. It will be added to the cart and saved to inventory."
+                                       Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <TextBlock Text="PRODUCT NAME *" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Height="40" Margin="0,0,0,12"
+                             Text="{Binding QuickProductName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <UniformGrid Columns="2" Margin="0,0,0,12">
+                        <StackPanel Margin="0,0,6,0">
+                            <TextBlock Text="SELLING PRICE (₹) *" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                                     Text="{Binding QuickProductPrice, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Margin="6,0,0,0">
+                            <TextBlock Text="QUANTITY TO ADD" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                                     Text="{Binding QuickProductQty, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </UniformGrid>
+
+                    <UniformGrid Columns="2" Margin="0,0,0,16">
+                        <StackPanel Margin="0,0,6,0">
+                            <TextBlock Text="CATEGORY" Style="{StaticResource InputLabel}"/>
+                            <ComboBox Height="40" ItemsSource="{Binding Categories}" SelectedValuePath="Id"
+                                      SelectedValue="{Binding QuickProductCategoryId}" DisplayMemberPath="Name"/>
+                        </StackPanel>
+                        <StackPanel Margin="6,0,0,0">
+                            <TextBlock Text="COST PRICE (₹)" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                                     Text="{Binding QuickProductCostPrice, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </UniformGrid>
+
+                    <!-- Status / Validation Message -->
+                    <TextBlock Text="{Binding QuickProductStatus}" Foreground="{StaticResource AccentDangerBrush}"
+                               FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"
+                               Visibility="{Binding QuickProductStatus.Length, Converter={StaticResource PosVis}}"/>
+
+                    <UniformGrid Columns="2">
+                        <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="0,0,6,0"
+                                Command="{Binding CloseQuickProductCommand}"/>
+                        <Button Style="{StaticResource SuccessButton}" Content="➕ Add &amp; Insert to Cart" Margin="6,0,0,0"
+                                Command="{Binding SaveQuickProductCommand}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- VOID BILL CONFIRMATION MODAL -->
+        <Grid Grid.RowSpan="2" Grid.ColumnSpan="2" Panel.ZIndex="130"
+              Visibility="{Binding ShowVoidModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="460" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,14">
+                        <TextBlock Text="🚫 Void Current Bill" Style="{StaticResource H2}" Foreground="#DC2626"/>
+                        <Button DockPanel.Dock="Right" Content="✕" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CloseVoidModalCommand}" Padding="8,4" FontSize="14"/>
+                    </DockPanel>
+
+                    <TextBlock Text="Are you sure you want to void this transaction? All cart items will be cleared and this action will be permanently logged to the security audit trail."
+                               Style="{StaticResource BodyText}" TextWrapping="Wrap" Margin="0,0,0,16" Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                    <!-- Void Summary Box -->
+                    <Border Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,0,0,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{Binding CartItemCount, StringFormat='🛒 Items to void: {0}'}" FontWeight="Bold" FontSize="13" Foreground="#991B1B"/>
+                                <TextBlock Text="{Binding SelectedCustomer.Name, StringFormat='👤 Customer: {0}', TargetNullValue='👤 Customer: Walk-in'}"
+                                           FontSize="12" Foreground="#B91C1C" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="{Binding CartGrandTotal, Converter={StaticResource Currency}}"
+                                       FontWeight="Bold" FontSize="20" Foreground="#DC2626" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Void Reason Selection -->
+                    <TextBlock Text="REASON FOR VOID *" Style="{StaticResource InputLabel}"/>
+                    <ComboBox Height="40" Margin="0,0,0,16" SelectedValue="{Binding VoidReason}" SelectedValuePath="Content">
+                        <ComboBoxItem Content="Customer changed mind" IsSelected="True"/>
+                        <ComboBoxItem Content="Item entered by mistake"/>
+                        <ComboBoxItem Content="Price discrepancy / Pricing issue"/>
+                        <ComboBoxItem Content="Payment declined / Cash short"/>
+                        <ComboBoxItem Content="System / Register reset"/>
+                    </ComboBox>
+
+                    <UniformGrid Columns="2">
+                        <Button Style="{StaticResource SecondaryButton}" Content="Cancel (Keep Bill)" Margin="0,0,6,0"
+                                Command="{Binding CloseVoidModalCommand}"/>
+                        <Button Style="{StaticResource DangerButton}" Content="🚫 Confirm Void &amp; Log" Margin="6,0,0,0"
+                                Command="{Binding ConfirmVoidCommand}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- HELD ORDERS / MULTI-TAB IN-REGISTER TRAY DRAWER -->
+        <Grid Grid.RowSpan="2" Grid.ColumnSpan="2" Panel.ZIndex="125"
+              Visibility="{Binding ShowHeldDrawer, Converter={StaticResource BoolVis}}">
+            <Border Background="#0F172A" Opacity="0.5" MouseDown="CloseHeldDrawer_MouseDown"/>
+            <Border HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="430"
+                    Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1,0,0,0">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="25" Direction="180" ShadowDepth="4" Opacity="0.18"/>
+                </Border.Effect>
+                <DockPanel Margin="20">
+                    <!-- Drawer Header -->
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                        <Button DockPanel.Dock="Right" Content="✕" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CloseHeldDrawerCommand}" Padding="8,4" FontSize="14"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="📌 Held Orders Tray" Style="{StaticResource H2}"/>
+                            <TextBlock Text="Seamlessly switch or resume parked orders" Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Park Current Order Button at Top of Drawer -->
+                    <Button DockPanel.Dock="Top" Style="{StaticResource WarningButton}" Margin="0,0,0,14" Padding="12,10"
+                            Command="{Binding ParkCurrentOrderCommand}" ToolTip="Park whatever is currently in the cart to this tray (F6)">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="📥 Park Current Cart into Tray" FontWeight="SemiBold" FontSize="13"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- List of Held Orders -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <!-- Empty State -->
+                            <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    CornerRadius="8" Padding="24" Margin="0,10,0,0"
+                                    Visibility="{Binding HeldOrdersCount, Converter={StaticResource PosVis}, ConverterParameter=Invert}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="📭" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <TextBlock Text="No Held Orders" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="Orders parked with [F6] will appear here for 1-click resumption."
+                                               TextWrapping="Wrap" TextAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <ItemsControl ItemsSource="{Binding HeldOrdersList}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12" Margin="0,0,0,10">
+                                            <StackPanel>
+                                                <DockPanel Margin="0,0,0,6">
+                                                    <TextBlock Text="{Binding InvoiceNumber}" FontWeight="Bold" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding GrandTotal, Converter={StaticResource Currency}}"
+                                                               FontWeight="Bold" FontSize="16" Foreground="{StaticResource AccentPrimaryBrush}" HorizontalAlignment="Right"/>
+                                                </DockPanel>
+
+                                                <DockPanel Margin="0,0,0,6">
+                                                    <TextBlock Text="{Binding Customer.Name, StringFormat='👤 {0}', TargetNullValue='👤 Walk-in'}"
+                                                               FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding CreatedAt, StringFormat='🕒 {0:hh:mm tt}'}"
+                                                               FontSize="11" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Right"/>
+                                                </DockPanel>
+
+                                                <TextBlock Text="{Binding Items.Count, StringFormat='📦 {0} item(s)'}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
+
+                                                <DockPanel>
+                                                    <Button DockPanel.Dock="Left" Style="{StaticResource DangerButton}" Content="🗑 Dismiss" Padding="8,4" FontSize="11"
+                                                            Command="{Binding DataContext.DismissHeldOrderFromRegisterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}" ToolTip="Cancel held order and restore stock"/>
+                                                    <Button DockPanel.Dock="Right" Style="{StaticResource SuccessButton}" Content="▶ Resume Order" Padding="14,4" FontSize="11" HorizontalAlignment="Right"
+                                                            Command="{Binding DataContext.ResumeHeldOrderFromRegisterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}" ToolTip="Resume this order in active register"/>
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
+

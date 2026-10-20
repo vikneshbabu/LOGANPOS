@@ -1,0 +1,1090 @@
+<UserControl x:Class="ApexPOS.Wpf.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ApexPOS.Wpf.Converters"
+             Background="Transparent">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <conv:EqualityToVisibilityConverter x:Key="EqVis"/>
+        <conv:CurrencyConverter x:Key="Currency"/>
+
+        <!-- Sub-Nav Button Styles -->
+        <Style x:Key="SubNavItemStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}" Margin="0,2">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#F1F5F9"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SubNavItemActiveStyle" TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+            <Setter Property="Background" Value="#E0F2FE"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <!-- Left Sub-Navigation Rail (240px) -->
+            <ColumnDefinition Width="250"/>
+            <!-- Right Main Settings Panel (*) -->
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ==================== LEFT SUB-NAVIGATION RAIL ==================== -->
+        <Border Grid.Column="0" Style="{StaticResource CardBorder}" Padding="16,20" Margin="0,0,16,0" VerticalAlignment="Stretch">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="SETTINGS GROUPS" Style="{StaticResource CaptionText}"
+                               FontWeight="Bold" Foreground="#94A3B8" Margin="8,0,0,12"/>
+
+                    <!-- Group 1: User & Security -->
+                    <Border Background="#F8FAFC" CornerRadius="8" Padding="10,6" Margin="0,0,0,6">
+                        <TextBlock Text="🛡️  User &amp; Security" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    </Border>
+                    <StackPanel Margin="6,0,0,14">
+                        <!-- Role Permissions (Active State) -->
+                        <Button Content="🔑  Role Permissions"
+                                Command="{Binding SelectNavItemCommand}" CommandParameter="Role Permissions">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActiveNavItem}" Value="Role Permissions">
+                                            <Setter Property="Background" Value="#E0F2FE"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Content="👥  User Accounts"
+                                Command="{Binding SelectNavItemCommand}" CommandParameter="User Accounts">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActiveNavItem}" Value="User Accounts">
+                                            <Setter Property="Background" Value="#E0F2FE"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Group 2: Hardware -->
+                    <Border Background="#F8FAFC" CornerRadius="8" Padding="10,6" Margin="0,0,0,6">
+                        <TextBlock Text="🖥️  Hardware" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    </Border>
+                    <StackPanel Margin="6,0,0,14">
+                        <Button Content="📟  Register Setup"
+                                Command="{Binding SelectNavItemCommand}" CommandParameter="Register Setup">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActiveNavItem}" Value="Register Setup">
+                                            <Setter Property="Background" Value="#E0F2FE"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Content="🖨️  Printer Config"
+                                Command="{Binding SelectNavItemCommand}" CommandParameter="Printer Config">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActiveNavItem}" Value="Printer Config">
+                                            <Setter Property="Background" Value="#E0F2FE"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Content="💳  Card Terminal"
+                                Command="{Binding SelectNavItemCommand}" CommandParameter="Card Terminal">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActiveNavItem}" Value="Card Terminal">
+                                            <Setter Property="Background" Value="#E0F2FE"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Group 3: Operations -->
+                    <Border Background="#F8FAFC" CornerRadius="8" Padding="10,6" Margin="0,0,0,6">
+                        <TextBlock Text="⚙️  Operations" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    </Border>
+                    <StackPanel Margin="6,0,0,14">
+                        <Button Content="📦  Inventory Control"
+                                Command="{Binding SelectNavItemCommand}" CommandParameter="Inventory Control">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActiveNavItem}" Value="Inventory Control">
+                                            <Setter Property="Background" Value="#E0F2FE"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Content="📜  Transaction Rules"
+                                Command="{Binding SelectNavItemCommand}" CommandParameter="Transaction Rules">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActiveNavItem}" Value="Transaction Rules">
+                                            <Setter Property="Background" Value="#E0F2FE"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Content="🎁  Loyalty Program"
+                                Command="{Binding SelectNavItemCommand}" CommandParameter="Loyalty Program">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActiveNavItem}" Value="Loyalty Program">
+                                            <Setter Property="Background" Value="#E0F2FE"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Group 4: Store Profile -->
+                    <Border Background="#F8FAFC" CornerRadius="8" Padding="10,6" Margin="0,0,0,6">
+                        <TextBlock Text="🏪  Store Profile" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    </Border>
+                    <StackPanel Margin="6,0,0,14">
+                        <Button Content="🏬  Store &amp; Receipt Rules"
+                                Command="{Binding SelectNavItemCommand}" CommandParameter="Store Profile">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActiveNavItem}" Value="Store Profile">
+                                            <Setter Property="Background" Value="#E0F2FE"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Group 5: Notifications & Reports -->
+                    <Border Background="#F8FAFC" CornerRadius="8" Padding="10,6" Margin="0,0,0,6">
+                        <TextBlock Text="📬  Notifications &amp; Reports" FontWeight="Bold" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    </Border>
+                    <StackPanel Margin="6,0,0,14">
+                        <Button Content="📧  Daily Email Reports"
+                                Command="{Binding SelectNavItemCommand}" CommandParameter="Daily Email Reports">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SubNavItemStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActiveNavItem}" Value="Daily Email Reports">
+                                            <Setter Property="Background" Value="#E0F2FE"/>
+                                            <Setter Property="Foreground" Value="{StaticResource AccentPrimaryBrush}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ==================== RIGHT MAIN SETTINGS PANEL ==================== -->
+        <Grid Grid.Column="1">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,4,0">
+                    <!-- Top Bar Controls: System Settings Page Header -->
+                    <Border Style="{StaticResource CardBorder}" Padding="20,16" Margin="0,0,0,16">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Left">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="⚙️ System Settings" Style="{StaticResource H1}" FontSize="24" Margin="0,0,12,0"/>
+                                    <!-- Role Status Badge -->
+                                    <Border Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1"
+                                            CornerRadius="14" Padding="10,3" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding SelectedRole, StringFormat='Active Target: Role: {0}'}"
+                                                   Foreground="#065F46" FontWeight="Bold" FontSize="12"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="User &amp; Security  ›  Role Permissions Matrix"
+                                           Style="{StaticResource CaptionText}" FontSize="12" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <!-- Notification & Account Indicator on the right of header -->
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <Border Background="#F1F5F9" CornerRadius="8" Padding="10,6" Margin="0,0,10,0">
+                                    <TextBlock Text="🔔 3 Updates" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                </Border>
+                                <Border Background="#E0F2FE" CornerRadius="8" Padding="10,6">
+                                    <TextBlock Text="👤 Store Manager (Admin)" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentPrimaryBrush}"/>
+                                </Border>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Success Toast Alert: ✔ Changes saved. API endpoints updated. -->
+                    <Border Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1.5" CornerRadius="10"
+                            Padding="16,14" Margin="0,0,0,16"
+                            Visibility="{Binding ShowToast, Converter={StaticResource BoolVis}}">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.1" Color="#10B981"/>
+                        </Border.Effect>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="✕"
+                                    Command="{Binding DismissToastCommand}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Foreground="#065F46" FontSize="14" FontWeight="Bold" Cursor="Hand"
+                                    VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="✔" FontSize="18" FontWeight="Bold" Foreground="#10B981" Margin="0,0,10,0"/>
+                                <TextBlock Text="{Binding ToastMessage}" Foreground="#065F46"
+                                           FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- ==================== DAILY EMAIL REPORTS PANEL ==================== -->
+                    <Border Style="{StaticResource CardBorder}" Padding="28" Margin="0,0,0,20"
+                            Visibility="{Binding ActiveNavItem, Converter={StaticResource EqVis}, ConverterParameter='Daily Email Reports'}">
+                        <StackPanel>
+                            <!-- Header -->
+                            <DockPanel Margin="0,0,0,20">
+                                <Border Width="40" Height="40" CornerRadius="10" Background="#E0F2FE" Margin="0,0,14,0" DockPanel.Dock="Left">
+                                    <TextBlock Text="📧" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel>
+                                    <TextBlock Text="Daily Email Business Summary" Style="{StaticResource H2}"/>
+                                    <TextBlock Text="Configure automated daily emails delivering total sales, net profit, and remaining stocks to your inbox."
+                                               Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </DockPanel>
+
+                            <!-- Status Message Banner -->
+                            <Border Background="#F0FDF4" BorderBrush="#22C55E" BorderThickness="1" CornerRadius="8"
+                                    Padding="14,10" Margin="0,0,0,16"
+                                    Visibility="{Binding EmailStatusMessage.Length, Converter={StaticResource BoolVis}}">
+                                <TextBlock Text="{Binding EmailStatusMessage}" Foreground="#15803D" FontWeight="SemiBold"/>
+                            </Border>
+
+                            <!-- Live Preview Cards of What Gets Sent -->
+                            <TextBlock Text="TODAY'S REPORT CONTENT PREVIEW" Style="{StaticResource InputLabel}" Margin="0,0,0,8"/>
+                            <UniformGrid Columns="4" Margin="0,0,0,24">
+                                <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,6,0">
+                                    <StackPanel>
+                                        <TextBlock Text="💰 Today's Sales" Style="{StaticResource CaptionText}"/>
+                                        <TextBlock Text="{Binding PreviewTodaySales, Converter={StaticResource Currency}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource AccentPrimaryBrush}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="3,0">
+                                    <StackPanel>
+                                        <TextBlock Text="📈 Net Profit" Style="{StaticResource CaptionText}"/>
+                                        <TextBlock Text="{Binding PreviewTodayProfit, Converter={StaticResource Currency}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource AccentSuccessBrush}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="3,0">
+                                    <StackPanel>
+                                        <TextBlock Text="📦 Stock Units" Style="{StaticResource CaptionText}"/>
+                                        <TextBlock Text="{Binding PreviewStockUnits, StringFormat='{}{0} units'}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="6,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="⚠️ Low Stock Items" Style="{StaticResource CaptionText}"/>
+                                        <TextBlock Text="{Binding PreviewLowStockCount}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource AccentDangerBrush}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <!-- Schedule & Recipient Configuration -->
+                            <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="10" Padding="20" Margin="0,0,0,20">
+                                <StackPanel>
+                                    <TextBlock Text="AUTOMATION SCHEDULE &amp; RECIPIENT" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
+
+                                    <DockPanel Margin="0,0,0,14">
+                                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                            <TextBlock Text="Enable Daily Automated Email" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="Send daily sales, profit and stock report automatically" Style="{StaticResource CaptionText}"/>
+                                        </StackPanel>
+                                        <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                                  Style="{StaticResource ToggleSwitchStyle}"
+                                                  IsChecked="{Binding EnableDailyReport, Mode=TwoWay}"/>
+                                    </DockPanel>
+
+                                    <UniformGrid Columns="2" Margin="0,0,0,8">
+                                        <StackPanel Margin="0,0,8,0">
+                                            <TextBlock Text="DISPATCH TIME (24-HOUR FORMAT: HH:mm)" Style="{StaticResource InputLabel}"/>
+                                            <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding DailyReportTime, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                        <StackPanel Margin="8,0,0,0">
+                                            <TextBlock Text="RECIPIENT EMAIL (SEPARATE MULTIPLE WITH COMMA)" Style="{StaticResource InputLabel}"/>
+                                            <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding RecipientEmail, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- SMTP Mail Server Settings -->
+                            <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="10" Padding="20" Margin="0,0,0,24">
+                                <StackPanel>
+                                    <TextBlock Text="SMTP SERVER SETTINGS" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
+
+                                    <UniformGrid Columns="3" Margin="0,0,0,12">
+                                        <StackPanel Margin="0,0,8,0">
+                                            <TextBlock Text="SMTP HOST / SERVER" Style="{StaticResource InputLabel}"/>
+                                            <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding SmtpHost, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                        <StackPanel Margin="4,0,4,0">
+                                            <TextBlock Text="SMTP PORT (DEFAULT: 587)" Style="{StaticResource InputLabel}"/>
+                                            <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding SmtpPort, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                        <StackPanel Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="SECURITY (TLS / SSL)" Style="{StaticResource InputLabel}"/>
+                                            <CheckBox Content="Enable SSL / TLS" IsChecked="{Binding EnableSsl, Mode=TwoWay}" Margin="0,8,0,0" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </UniformGrid>
+
+                                    <UniformGrid Columns="2" Margin="0,0,0,8">
+                                        <StackPanel Margin="0,0,8,0">
+                                            <TextBlock Text="SENDER EMAIL ADDRESS" Style="{StaticResource InputLabel}"/>
+                                            <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding SenderEmail, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                        <StackPanel Margin="8,0,0,0">
+                                            <TextBlock Text="SENDER APP PASSWORD / PASSWORD" Style="{StaticResource InputLabel}"/>
+                                            <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding SenderPassword, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Actions -->
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource SuccessButton}"
+                                        Content="✉️ Send Daily Report Now"
+                                        Command="{Binding SendTestReportCommand}"
+                                        Height="44" Padding="22,0" Margin="10,0,0,0"/>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}"
+                                        Content="💾 Save Email Config"
+                                        Command="{Binding SaveEmailSettingsCommand}"
+                                        Height="44" Padding="22,0"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ==================== STORE PROFILE PANEL ==================== -->
+                    <Border Style="{StaticResource CardBorder}" Padding="28" Margin="0,0,0,20"
+                            Visibility="{Binding ActiveNavItem, Converter={StaticResource EqVis}, ConverterParameter='Store Profile'}">
+                        <StackPanel>
+                            <TextBlock Text="🏬 Store Profile &amp; Receipt Rules" Style="{StaticResource H2}" Margin="0,0,0,6"/>
+                            <TextBlock Text="Manage your business identity, currency symbol, and receipt footer." Style="{StaticResource CaptionText}" Margin="0,0,0,20"/>
+
+                            <TextBlock Text="STORE NAME" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding StoreName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="STORE ADDRESS" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding StoreAddress, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                            <UniformGrid Columns="2" Margin="0,0,0,12">
+                                <StackPanel Margin="0,0,8,0">
+                                    <TextBlock Text="STORE PHONE" Style="{StaticResource InputLabel}"/>
+                                    <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding StorePhone, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <StackPanel Margin="8,0,0,0">
+                                    <TextBlock Text="CURRENCY SYMBOL" Style="{StaticResource InputLabel}"/>
+                                    <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding CurrencySymbol, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </UniformGrid>
+
+                            <TextBlock Text="RECEIPT FOOTER MESSAGE" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="60" TextWrapping="Wrap" Text="{Binding ReceiptFooter, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,20"/>
+
+                            <Button Style="{StaticResource SuccessButton}" Content="💾 Save Store Profile"
+                                    Command="{Binding SaveSettingsCommand}" Height="42" Padding="24,0" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ==================== USER ACCOUNTS MANAGEMENT PANEL ==================== -->
+                    <Border Style="{StaticResource CardBorder}" Padding="28" Margin="0,0,0,20"
+                            Visibility="{Binding ActiveNavItem, Converter={StaticResource EqVis}, ConverterParameter='User Accounts'}">
+                        <StackPanel>
+                            <!-- Header & Action -->
+                            <DockPanel Margin="0,0,0,20">
+                                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                    <TextBlock Text="👥 User Management &amp; Role Permissions" Style="{StaticResource H2}"/>
+                                    <TextBlock Text="Manage staff accounts, credentials, and assign roles (Cashier, Stock Maintainer, Admin, Manager)."
+                                               Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}"
+                                        Content="➕ Add New User"
+                                        Command="{Binding OpenCreateUserModalCommand}"
+                                        Height="42" Padding="20,0" VerticalAlignment="Center"/>
+                            </DockPanel>
+
+                            <!-- Role Permissions Info Banner -->
+                            <Border Background="#EFF6FF" BorderBrush="#3B82F6" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,16">
+                                <DockPanel>
+                                    <TextBlock Text="ℹ️" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Dynamic Sidebar Navigation Permissions:" FontWeight="Bold" FontSize="12" Foreground="#1E40AF"/>
+                                        <TextBlock Text="• Cashier: Register, Customers, Orders &amp; History | • Stock Maintainer: Inventory, Categories, Purchases, Dashboard | • Admin/Manager: All 8 Pages"
+                                                   FontSize="11" Foreground="#1D4ED8" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+
+                            <!-- Users List Table -->
+                            <DataGrid ItemsSource="{Binding UsersList}" AutoGenerateColumns="False"
+                                      IsReadOnly="True" CanUserAddRows="False"
+                                      Background="Transparent" BorderThickness="0"
+                                      RowHeight="48" HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#F1F5F9">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
+                                    <DataGridTemplateColumn Header="Username" Width="150">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="👤 " FontSize="12"/>
+                                                    <TextBlock Text="{Binding Username}" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="160"/>
+                                    <DataGridTemplateColumn Header="Role / Permission" Width="150">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="12" Padding="10,4" HorizontalAlignment="Left" Background="#F1F5F9">
+                                                    <TextBlock Text="{Binding Role}" FontWeight="Bold" FontSize="11" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Loyalty Points" Width="130">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="6" Padding="8,3" HorizontalAlignment="Left">
+                                                    <TextBlock Text="{Binding LoyaltyPoints, StringFormat='⭐ {0:N0} pts'}" FontWeight="Bold" FontSize="11" Foreground="#92400E"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="PIN Code" Binding="{Binding PinCode}" Width="90"/>
+                                    <DataGridTemplateColumn Header="Status" Width="90">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="10" Padding="8,3" HorizontalAlignment="Left">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#DCFCE7"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                                    <Setter Property="Background" Value="#FEE2E2"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock FontSize="11" FontWeight="Bold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="Active"/>
+                                                                <Setter Property="Foreground" Value="#15803D"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                                        <Setter Property="Text" Value="Inactive"/>
+                                                                        <Setter Property="Foreground" Value="#B91C1C"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Actions" Width="130">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="🗑️ Deactivate" Style="{StaticResource DangerButton}" Padding="8,4" FontSize="11"
+                                                        Command="{Binding DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" ToolTip="Deactivate User Account"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ==================== LOYALTY PROGRAM PANEL ==================== -->
+                    <Border Style="{StaticResource CardBorder}" Padding="28" Margin="0,0,0,20"
+                            Visibility="{Binding ActiveNavItem, Converter={StaticResource EqVis}, ConverterParameter='Loyalty Program'}">
+                        <StackPanel>
+                            <!-- Header -->
+                            <StackPanel Margin="0,0,0,20">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="🎁 Loyalty Rewards Program Configuration" Style="{StaticResource H2}" Margin="0,0,12,0"/>
+                                    <Border Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="1"
+                                            CornerRadius="12" Padding="10,3" VerticalAlignment="Center">
+                                        <TextBlock Text="Customer Rewards" Foreground="#92400E" FontWeight="Bold" FontSize="11"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Configure earning ratio per rupee spent, redeem values, and rewards calculations for POS checkouts."
+                                           Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <!-- Program Status Toggle Card -->
+                            <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="10" Padding="18,14" Margin="0,0,0,20">
+                                <DockPanel LastChildFill="True">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Enable Customer Loyalty Program" FontWeight="Bold" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="When enabled, loyalty points are automatically calculated and credited on checkout when a customer is selected."
+                                                   Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding EnableLoyaltyProgram, Mode=TwoWay}"/>
+                                </DockPanel>
+                            </Border>
+
+                            <!-- Configuration Inputs -->
+                            <Border Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="10" Padding="20" Margin="0,0,0,20">
+                                <StackPanel>
+                                    <TextBlock Text="POINT ACCUMULATION &amp; REDEMPTION RULES" FontWeight="Bold" FontSize="12"
+                                               Foreground="{StaticResource AccentPrimaryBrush}" Margin="0,0,0,16"/>
+
+                                    <UniformGrid Columns="2" Margin="0,0,0,16">
+                                        <!-- Amount per point -->
+                                        <StackPanel Margin="0,0,12,0">
+                                            <TextBlock Text="SPENDING AMOUNT PER 1 POINT (₹)" Style="{StaticResource InputLabel}"/>
+                                            <TextBox Style="{StaticResource ModernTextBox}" Height="44" FontSize="15" FontWeight="Bold"
+                                                     Text="{Binding LoyaltyAmountPerPoint, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBlock Text="Example: ₹250 means ₹250 purchase = 1 loyalty point (₹500 = 2 pts)"
+                                                       Style="{StaticResource CaptionText}" FontSize="11" Margin="2,4,0,0"/>
+                                        </StackPanel>
+
+                                        <!-- Redeem value per point -->
+                                        <StackPanel Margin="12,0,0,0">
+                                            <TextBlock Text="POINT REDEEM VALUE (₹)" Style="{StaticResource InputLabel}"/>
+                                            <TextBox Style="{StaticResource ModernTextBox}" Height="44" FontSize="15" FontWeight="Bold"
+                                                     Text="{Binding LoyaltyPointRedeemValue, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBlock Text="Value in Rupees per 1 redeemed point (e.g. ₹1.00)"
+                                                       Style="{StaticResource CaptionText}" FontSize="11" Margin="2,4,0,0"/>
+                                        </StackPanel>
+                                    </UniformGrid>
+
+                                    <!-- Live Rule Preview Card -->
+                                    <Border Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="8" Padding="16,12" Margin="0,8,0,0">
+                                        <DockPanel>
+                                            <TextBlock Text="💡" FontSize="20" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Live Configuration Calculation Rule:" FontWeight="Bold" FontSize="13" Foreground="#065F46"/>
+                                                <TextBlock Foreground="#047857" FontSize="12" Margin="0,3,0,0">
+                                                    <Run Text="Every purchase of "/>
+                                                    <Run Text="{Binding LoyaltyAmountPerPoint, Converter={StaticResource Currency}}" FontWeight="Bold"/>
+                                                    <Run Text=" earns 1 Loyalty Point. A customer buying ₹1,000 earns points based on Floor(1000 / "/>
+                                                    <Run Text="{Binding LoyaltyAmountPerPoint, StringFormat='{}{0:F0}'}"/>
+                                                    <Run Text=")."/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Actions & Status Message -->
+                            <DockPanel>
+                                <TextBlock Text="{Binding LoyaltyStatusMessage}" FontWeight="SemiBold" FontSize="13"
+                                           VerticalAlignment="Center" Foreground="{StaticResource AccentSuccessBrush}"/>
+                                <Button DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                        Style="{StaticResource SuccessButton}"
+                                        Content="💾 Save Loyalty Configuration"
+                                        Command="{Binding SaveLoyaltySettingsCommand}"
+                                        Height="44" Padding="26,0"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ==================== ROLE PERMISSIONS CONTENT ==================== -->
+                    <StackPanel Visibility="{Binding ActiveNavItem, Converter={StaticResource EqVis}, ConverterParameter='Role Permissions'}">
+                        <!-- Role Selection Dropdown Card -->
+                        <Border Style="{StaticResource CardBorder}" Padding="20,16" Margin="0,0,0,16">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,24,0">
+                                <TextBlock Text="ROLE SELECTION DROPDOWN" Style="{StaticResource CaptionText}"
+                                           FontWeight="Bold" Margin="0,0,0,4"/>
+                                <TextBlock Text="Select user role to view and customize permissions toggle matrix."
+                                           Style="{StaticResource CaptionText}" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <TextBlock Text="Role:" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <ComboBox ItemsSource="{Binding Roles}"
+                                          SelectedItem="{Binding SelectedRole, Mode=TwoWay}"
+                                          Width="220" Height="40" Margin="0,0,16,0"/>
+
+                                <!-- View Target Indicator -->
+                                <Border Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1"
+                                        CornerRadius="8" Padding="12,8">
+                                    <TextBlock Text="{Binding SelectedRole, StringFormat='Current View Target: Role: {0}'}"
+                                               FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                </Border>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- ==================== ROLE PERMISSIONS GRID (TOGGLE MATRIX) ==================== -->
+                    <UniformGrid Columns="2" Margin="0,0,0,16">
+                        <!-- 1. TRANSACTIONS GROUP -->
+                        <Border Style="{StaticResource CardBorder}" Margin="0,0,8,12" Padding="20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E0F2FE" Margin="0,0,10,0">
+                                        <TextBlock Text="💳" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Transactions Group" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Sales, refunds, voids and register overrides" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Separator Background="#F1F5F9" Margin="0,0,0,10"/>
+
+                                <!-- Process Sales -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Process Sales" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Authorize cart checkout &amp; payments" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding ProcessSales, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Issue Refunds -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Issue Refunds" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Process customer return disbursements" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding IssueRefunds, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Void Transaction -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Void Transaction" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Cancel active or incomplete receipts" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding VoidTransaction, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Manager Override -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Manager Override" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Bypass restricted price or credit limits" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding ManagerOverride, Mode=TwoWay}"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 2. USER MANAGEMENT GROUP -->
+                        <Border Style="{StaticResource CardBorder}" Margin="8,0,0,12" Padding="20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#FEF3C7" Margin="0,0,10,0">
+                                        <TextBlock Text="👥" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="User Management Group" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Staff credentials, credentials reset and role rights" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Separator Background="#F1F5F9" Margin="0,0,0,10"/>
+
+                                <!-- Add/Edit Users -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Add/Edit Users" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Create employee accounts &amp; update profiles" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding AddEditUsers, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Reset Passwords -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Reset Passwords" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Change staff passwords and quick PINs" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding ResetPasswords, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Change Roles -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Change Roles" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Promote or adjust staff access levels" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding ChangeRoles, Mode=TwoWay}"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 3. INVENTORY GROUP -->
+                        <Border Style="{StaticResource CardBorder}" Margin="0,0,8,12" Padding="20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#DCFCE7" Margin="0,0,10,0">
+                                        <TextBlock Text="📦" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Inventory Group" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Catalog products, stock counts, adjustments and labels" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Separator Background="#F1F5F9" Margin="0,0,0,10"/>
+
+                                <!-- Add/Edit Products -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Add/Edit Products" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Catalog updates, distributor and unit setup" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding AddEditProducts, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- View Stock -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="View Stock" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Inspect real-time inventory counts and alerts" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding ViewStock, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Adjust Stock Levels -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Adjust Stock Levels" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Perform manual stock correction and write-offs" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding AdjustStockLevels, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Print Barcodes -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Print Barcodes" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Generate label stickers for shelves and packs" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding PrintBarcodes, Mode=TwoWay}"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 4. REPORTING GROUP -->
+                        <Border Style="{StaticResource CardBorder}" Margin="8,0,0,12" Padding="20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#F3E8FF" Margin="0,0,10,0">
+                                        <TextBlock Text="📊" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Reporting Group" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Sales analytics, inventory valuation and Z-reports" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Separator Background="#F1F5F9" Margin="0,0,0,10"/>
+
+                                <!-- View Sales Reports -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="View Sales Reports" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Access revenue, margin, and cashier breakdown" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding ViewSalesReports, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- View Inventory Reports -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="View Inventory Reports" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Stock valuation, low stock and turnover audit" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding ViewInventoryReports, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Daily Summary (Z-Report) -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Daily Summary (Z-Report)" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Generate register shift closure &amp; reconciliation" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding DailySummaryZReport, Mode=TwoWay}"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 5. SETTINGS & CONFIG GROUP 1 -->
+                        <Border Style="{StaticResource CardBorder}" Margin="0,0,8,12" Padding="20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#F1F5F9" Margin="0,0,10,0">
+                                        <TextBlock Text="🛠️" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Settings &amp; Config Group 1" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Primary POS workflow rules and hardware profiles" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Separator Background="#F1F5F9" Margin="0,0,0,10"/>
+
+                                <!-- Edit POS Rules -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Edit POS Rules" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Configure discounts, credit policies &amp; timeouts" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding EditPosRules1, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Hardware Setup -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Hardware Setup" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Connect barcode scanners and cash drawers" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding HardwareSetup1, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Receipt Customization -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Receipt Customization" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Customize header logo and footer note" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding ReceiptCustomization1, Mode=TwoWay}"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 6. SETTINGS & CONFIG GROUP 2 -->
+                        <Border Style="{StaticResource CardBorder}" Margin="8,0,0,12" Padding="20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <Border Width="32" Height="32" CornerRadius="8" Background="#E2E8F0" Margin="0,0,10,0">
+                                        <TextBlock Text="🔧" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Settings &amp; Config Group 2" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Advanced system policies and peripheral sync" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Separator Background="#F1F5F9" Margin="0,0,0,10"/>
+
+                                <!-- Edit POS Rules -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Edit POS Rules" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Audit log controls and API synchronization" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding EditPosRules2, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Hardware Setup -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Hardware Setup" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="EFTPOS card terminal serial/ethernet config" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding HardwareSetup2, Mode=TwoWay}"/>
+                                </DockPanel>
+
+                                <!-- Receipt Customization -->
+                                <DockPanel Margin="0,6">
+                                    <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="Receipt Customization" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="Digital e-receipt, QR code and email copy layout" Style="{StaticResource CaptionText}"/>
+                                    </StackPanel>
+                                    <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                              Style="{StaticResource ToggleSwitchStyle}"
+                                              IsChecked="{Binding ReceiptCustomization2, Mode=TwoWay}"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- ==================== ACTION BUTTONS BAR ==================== -->
+                    <Border Style="{StaticResource CardBorder}" Padding="20,16" Margin="0,0,0,24">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                                <TextBlock Text="Pending Changes" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Saved changes are applied to active role permissions immediately." Style="{StaticResource CaptionText}"/>
+                            </StackPanel>
+
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <!-- Cancel Secondary Button (White/Grey Outline) -->
+                                <Button Style="{StaticResource OutlineSecondaryButton}"
+                                        Content="✕  Cancel"
+                                        Command="{Binding CancelPermissionsCommand}"
+                                        Margin="0,0,12,0" Padding="24,12"/>
+
+                                <!-- Save Changes Primary Button (Green) -->
+                                <Button Style="{StaticResource SuccessButton}"
+                                        Content="💾  Save Changes"
+                                        Command="{Binding SavePermissionsCommand}"
+                                        Padding="28,12" FontSize="14" FontWeight="Bold"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Create User Modal Dialog -->
+        <Grid Grid.ColumnSpan="2" Panel.ZIndex="100"
+              Visibility="{Binding ShowUserModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="480" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="32">
+                <StackPanel>
+                    <TextBlock Text="➕ Create New Staff User" Style="{StaticResource H2}" Margin="0,0,0,4"/>
+                    <TextBlock Text="Add staff credentials and assign role for POS sidebar permissions."
+                               Style="{StaticResource CaptionText}" Margin="0,0,0,20"/>
+
+                    <TextBlock Text="USERNAME *" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                             Text="{Binding NewUsername, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                    <TextBlock Text="FULL NAME" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                             Text="{Binding NewFullName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
+
+                    <TextBlock Text="USER ROLE / PERMISSION *" Style="{StaticResource InputLabel}"/>
+                    <ComboBox ItemsSource="{Binding AvailableRoles}"
+                              SelectedItem="{Binding NewUserRole, Mode=TwoWay}"
+                              Height="40" Margin="0,0,0,12"/>
+
+                    <UniformGrid Columns="2" Margin="0,0,0,16">
+                        <StackPanel Margin="0,0,6,0">
+                            <TextBlock Text="PASSWORD" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                                     Text="{Binding NewPassword, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Margin="6,0,0,0">
+                            <TextBlock Text="PIN CODE (4-DIGIT)" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                                     Text="{Binding NewPinCode, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </UniformGrid>
+
+                    <TextBlock Text="{Binding UserStatusMessage}" Foreground="{StaticResource AccentDangerBrush}"
+                               FontWeight="SemiBold" FontSize="12" Margin="0,0,0,16"
+                               Visibility="{Binding UserStatusMessage, Converter={StaticResource BoolVis}}"/>
+
+                    <UniformGrid Columns="2">
+                        <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="0,0,6,0" Height="42"
+                                Command="{Binding CloseCreateUserModalCommand}"/>
+                        <Button Style="{StaticResource PrimaryButton}" Content="💾 Create User" Margin="6,0,0,0" Height="42"
+                                Command="{Binding CreateUserCommand}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

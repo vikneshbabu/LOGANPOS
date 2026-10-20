@@ -1,0 +1,442 @@
+<UserControl x:Class="ApexPOS.Wpf.Views.InventoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ApexPOS.Wpf.Converters"
+             Background="Transparent">
+    <UserControl.Resources>
+        <conv:CurrencyConverter x:Key="Currency"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <conv:LowStockToBrushConverter x:Key="LowStockBrush"/>
+    </UserControl.Resources>
+
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header & Filter Bar -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,14">
+            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="➕ New Product"
+                    Command="{Binding NewProductCommand}" Height="40" Padding="18,0" Margin="8,0,0,0"/>
+            <Button DockPanel.Dock="Right" Style="{StaticResource SuccessButton}"
+                    Content="📥 Export Valuation"
+                    Command="{Binding ExportInventoryValuationCommand}" Height="40" Padding="14,0" Margin="8,0,0,0"
+                    ToolTip="Download complete stock inventory, total costs, and profit calculations to CSV"/>
+            <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                    Content="{Binding DeletedCount, StringFormat='🗑️ Trash ({0})'}"
+                    Command="{Binding OpenTrashModalCommand}" Height="40" Padding="14,0" Margin="8,0,0,0"
+                    ToolTip="View deleted products and restoration history log"/>
+
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Search Input -->
+                <TextBox Style="{StaticResource ModernTextBox}" Width="200" Height="40" Margin="0,0,8,0"
+                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Return" Command="{Binding SearchCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
+
+                <!-- Distributor Filter -->
+                <ComboBox Width="180" Height="40" Margin="0,0,8,0"
+                          ItemsSource="{Binding Suppliers}" SelectedValuePath="Id"
+                          SelectedValue="{Binding FilterSupplierId}" DisplayMemberPath="Name"
+                          ToolTip="Filter by Distributor (All if unselected)"/>
+
+                <!-- Category Filter -->
+                <ComboBox Width="160" Height="40" Margin="0,0,8,0"
+                          ItemsSource="{Binding FilteredListCategories}" SelectedValuePath="Id"
+                          SelectedValue="{Binding FilterCategoryId}" DisplayMemberPath="Name"
+                          ToolTip="Filter by Category (Cascaded by Distributor)"/>
+
+                <Button Style="{StaticResource SecondaryButton}" Content="🔍 Search"
+                        Command="{Binding SearchCommand}" Height="40" Padding="14,0" Margin="0,0,6,0"/>
+
+                <Button Style="{StaticResource SecondaryButton}" Content="✕ Reset"
+                        Command="{Binding ResetFiltersCommand}" Height="40" Padding="12,0"
+                        ToolTip="Reset all filters"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Live Stock Valuation & Profit Calculation Deck -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,14">
+            <!-- Toast notification for export -->
+            <Border Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="6"
+                    Padding="14,8" Margin="0,0,0,10"
+                    Visibility="{Binding ExportStatusMessage.Length, Converter={StaticResource BoolVis}}">
+                <DockPanel>
+                    <TextBlock Text="{Binding ExportStatusMessage}" Foreground="#065F46" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Card 1: Total Physical Stock -->
+                <Border Grid.Column="0" Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,6,0">
+                    <StackPanel>
+                        <TextBlock Text="📦 TOTAL UNITS IN STOCK" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding TotalStockQuantity, StringFormat='{}{0:N0}'}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,3,0,0"/>
+                        <TextBlock Text="Total physical inventory items" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card 2: Total Purchase Value -->
+                <Border Grid.Column="1" Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="3,0">
+                    <StackPanel>
+                        <TextBlock Text="🏷️ TOTAL PURCHASE VALUE" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding TotalInventoryCost, Converter={StaticResource Currency}}" FontSize="18" FontWeight="Bold" Foreground="#D97706" Margin="0,3,0,0"/>
+                        <TextBlock Text="Total capital invested at Purchase Rate" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card 3: Total Retail Value -->
+                <Border Grid.Column="2" Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="3,0">
+                    <StackPanel>
+                        <TextBlock Text="🏪 TOTAL RETAIL VALUE" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding TotalRetailValue, Converter={StaticResource Currency}}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource AccentPrimaryBrush}" Margin="0,3,0,0"/>
+                        <TextBlock Text="Expected gross revenue at MRP" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card 4: Projected Total Profit -->
+                <Border Grid.Column="3" Background="#F0FDF4" BorderBrush="#BBF7D0" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="3,0">
+                    <StackPanel>
+                        <TextBlock Text="💰 PROJECTED PROFIT" FontSize="10" FontWeight="Bold" Foreground="#166534"/>
+                        <TextBlock Text="{Binding TotalProjectedProfit, Converter={StaticResource Currency}}" FontSize="18" FontWeight="Bold" Foreground="#059669" Margin="0,3,0,0"/>
+                        <TextBlock Text="Retail Value minus Purchase Cost" FontSize="10" Foreground="#15803D"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card 5: Overall Margin % -->
+                <Border Grid.Column="4" Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="6,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="📈 PROJECTED MARGIN" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding OverallProfitMargin, StringFormat='{}{0:F1}%'}" FontSize="18" FontWeight="Bold" Foreground="#2563EB" Margin="0,3,0,0"/>
+                        <TextBlock Text="Profit / Retail Value ratio" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+
+        <!-- Content Grid -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Product Table -->
+            <Border Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,12,0" Padding="0">
+                <DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}"
+                          IsReadOnly="True" SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="80"/>
+                        <DataGridTextColumn Header="Product Name" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="Category" Binding="{Binding Category.Name}" Width="110"/>
+                        <DataGridTextColumn Header="Distributor" Binding="{Binding DistributorName}" Width="130"/>
+                        <DataGridTextColumn Header="Unit" Binding="{Binding Unit}" Width="70"/>
+                        <DataGridTextColumn Header="Purchase Price" Binding="{Binding CostPrice, Converter={StaticResource Currency}}" Width="100"/>
+                        <DataGridTextColumn Header="Selling Price" Binding="{Binding SellingPrice, Converter={StaticResource Currency}}" Width="100"/>
+                        <DataGridTextColumn Header="MRP" Binding="{Binding EffectiveMRP, Converter={StaticResource Currency}}" Width="90"/>
+                        <DataGridTextColumn Header="Margin" Binding="{Binding Margin, StringFormat='{}{0:F1}%'}" Width="75"/>
+                        <DataGridTextColumn Header="Stock" Binding="{Binding StockQuantity}" Width="60"/>
+                        <DataGridTemplateColumn Header="Status" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="10" Padding="8,3" HorizontalAlignment="Left"
+                                            Background="{Binding IsLowStock, Converter={StaticResource LowStockBrush}}" Opacity="0.2">
+                                        <TextBlock Text="{Binding IsLowStock, Converter={StaticResource BoolVis}, FallbackValue='OK'}"
+                                                   Foreground="{Binding IsLowStock, Converter={StaticResource LowStockBrush}}"
+                                                   FontSize="11" FontWeight="SemiBold"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Actions" Width="130">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="✏️" Style="{StaticResource SecondaryButton}" Padding="8,3" Margin="0,0,3,0"
+                                                Command="{Binding DataContext.EditProductCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" ToolTip="Edit Product"/>
+                                        <Button Content="📦" Style="{StaticResource SecondaryButton}" Padding="8,3" Margin="0,0,3,0"
+                                                Command="{Binding DataContext.OpenStockAdjustCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" ToolTip="Adjust Stock"/>
+                                        <Button Content="🗑️" Style="{StaticResource SecondaryButton}" Padding="8,3"
+                                                Command="{Binding DataContext.DeleteProductCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" ToolTip="Delete Product (Move to Trash)"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Low Stock Alert Panel -->
+            <Border Grid.Column="1" Style="{StaticResource CardBorder}" Margin="12,0,0,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="⚠️ Low Stock Alerts" Style="{StaticResource H3}" Margin="0,0,0,16"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding LowStockProducts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F8F9FA" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="13" FontWeight="Medium"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <DockPanel Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding StockQuantity, StringFormat='Stock: {0}'}"
+                                                           Foreground="{StaticResource AccentDangerBrush}" FontSize="12" FontWeight="SemiBold"/>
+                                                <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                                           Text="{Binding ReorderLevel, StringFormat='Reorder: {0}'}"
+                                                           Foreground="{StaticResource TextMutedBrush}" FontSize="11"/>
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- Edit Product Panel -->
+        <Grid Grid.RowSpan="2" Panel.ZIndex="50"
+              Visibility="{Binding ShowEditPanel, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="560" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <StackPanel>
+                    <TextBlock Text="{Binding EditPanelTitle}" Style="{StaticResource H2}" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="PRODUCT NAME" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditName}" Margin="0,0,0,12"/>
+
+                    <!-- Distributor & Category (Cascaded) -->
+                    <UniformGrid Columns="2" Margin="0,0,0,12">
+                        <StackPanel Margin="0,0,6,0">
+                            <TextBlock Text="DISTRIBUTOR" Style="{StaticResource InputLabel}"/>
+                            <ComboBox ItemsSource="{Binding Suppliers}" SelectedValuePath="Id"
+                                      SelectedValue="{Binding EditSupplierId}" DisplayMemberPath="Name"/>
+                        </StackPanel>
+                        <StackPanel Margin="6,0,0,0">
+                            <TextBlock Text="CATEGORY" Style="{StaticResource InputLabel}"/>
+                            <ComboBox ItemsSource="{Binding FilteredFormCategories}" SelectedValuePath="Id"
+                                      SelectedValue="{Binding EditCategoryId}" DisplayMemberPath="Name"/>
+                        </StackPanel>
+                    </UniformGrid>
+
+                    <!-- Unit / Packaging & SKU -->
+                    <UniformGrid Columns="2" Margin="0,0,0,12">
+                        <StackPanel Margin="0,0,6,0">
+                            <TextBlock Text="UNIT / PACKAGING" Style="{StaticResource InputLabel}"/>
+                            <ComboBox ItemsSource="{Binding AvailableUnits}" Text="{Binding EditUnit}"
+                                      IsEditable="True"
+                                      ToolTip="Select standard unit or type custom pack size"/>
+                        </StackPanel>
+                        <StackPanel Margin="6,0,0,0">
+                            <TextBlock Text="SKU" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditSku}"/>
+                        </StackPanel>
+                    </UniformGrid>
+
+                    <!-- Barcode -->
+                    <StackPanel Margin="0,0,0,12">
+                        <TextBlock Text="BARCODE" Style="{StaticResource InputLabel}"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditBarcode}"/>
+                    </StackPanel>
+
+                    <!-- Purchase Price, Selling Price, MRP (3 Fields) -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="PURCHASE PRICE (₹)" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditPurchasePrice, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Cost rate paid to distributor / supplier"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="SELLING PRICE (₹)" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditSellingPrice, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Store retail selling price to customers"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Text="MRP (₹)" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditMRP, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Maximum Retail Price printed on package"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Real-Time Margin & Profit Indicator (Selling Price - Purchase Price) -->
+                    <Border Background="#F0FDF4" BorderBrush="#BBF7D0" BorderThickness="1" CornerRadius="8"
+                            Padding="12,10" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="MARGIN / PROFIT" FontSize="10" FontWeight="Bold" Foreground="#166534"/>
+                                <TextBlock Text="{Binding EditProfitPerUnit, Converter={StaticResource Currency}}"
+                                           FontSize="14" FontWeight="Bold" Foreground="#059669" Margin="0,2,0,0"/>
+                                <TextBlock Text="(Selling - Purchase)" FontSize="9" Foreground="#15803D" Margin="0,1,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <TextBlock Text="MARGIN %" FontSize="10" FontWeight="Bold" Foreground="#166534" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding EditMarginPercent, StringFormat='{}{0:F1}%'}"
+                                           FontSize="14" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                <TextBlock Text="on Selling Price" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                                <TextBlock Text="DISCOUNT OFF MRP" FontSize="10" FontWeight="Bold" Foreground="#166534" HorizontalAlignment="Right"/>
+                                <TextBlock Text="{Binding EditDiscountFromMRP, StringFormat='{}{0:F1}% off'}"
+                                           FontSize="14" FontWeight="Bold" Foreground="#D97706" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                                <TextBlock Text="{Binding EditMRP, StringFormat='MRP: ₹{0:F2}'}" FontSize="9" Foreground="#64748B" HorizontalAlignment="Right" Margin="0,1,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Stock Quantity, Reorder Level -->
+                    <UniformGrid Columns="2" Margin="0,0,0,20">
+                        <StackPanel Margin="0,0,6,0">
+                            <TextBlock Text="STOCK QTY" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditStockQuantity}"/>
+                        </StackPanel>
+                        <StackPanel Margin="6,0,0,0">
+                            <TextBlock Text="REORDER LEVEL" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditReorderLevel}"/>
+                        </StackPanel>
+                    </UniformGrid>
+
+                    <UniformGrid Columns="2" Margin="0,4,0,0">
+                        <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="0,0,6,0"
+                                Command="{Binding CancelEditCommand}"/>
+                        <Button Style="{StaticResource PrimaryButton}" Content="💾 Save Product" Margin="6,0,0,0"
+                                Command="{Binding SaveProductCommand}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Stock Adjust Panel -->
+        <Grid Grid.RowSpan="2" Panel.ZIndex="50"
+              Visibility="{Binding ShowStockAdjust, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="420" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="32">
+                <StackPanel>
+                    <TextBlock Text="📦 Stock Adjustment" Style="{StaticResource H2}" Margin="0,0,0,20"/>
+
+                    <TextBlock Text="QUANTITY CHANGE" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding AdjustQuantity}" FontSize="18"
+                             FontWeight="Bold" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="REASON" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding AdjustReason}" Margin="0,0,0,24"/>
+
+                    <UniformGrid Columns="2">
+                        <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Margin="0,0,6,0"
+                                Command="{Binding CancelStockAdjustCommand}"/>
+                        <Button Style="{StaticResource PrimaryButton}" Content="✅ Apply Adjustment" Margin="6,0,0,0"
+                                Command="{Binding ApplyStockAdjustCommand}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Recycle Bin & Delete Log Modal -->
+        <Grid Grid.RowSpan="2" Panel.ZIndex="60"
+              Visibility="{Binding ShowTrashModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="780" MaxHeight="600" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <DockPanel>
+                    <!-- Modal Header -->
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="✕ Close"
+                                Command="{Binding CloseTrashModalCommand}" Height="34" Padding="12,0"/>
+                        <StackPanel>
+                            <TextBlock Text="🗑️ Recycle Bin &amp; Delete Log" Style="{StaticResource H2}"/>
+                            <TextBlock Text="Review deleted products, restore them to active stock, or inspect deletion history."
+                                       Style="{StaticResource CaptionText}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Restore Confirmation Status -->
+                    <Border DockPanel.Dock="Top" Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1"
+                            CornerRadius="8" Padding="12,8" Margin="0,0,0,12"
+                            Visibility="{Binding TrashStatusMessage.Length, Converter={StaticResource BoolVis}}">
+                        <TextBlock Text="{Binding TrashStatusMessage}" Foreground="#065F46" FontWeight="SemiBold"/>
+                    </Border>
+
+                    <!-- Tabbed View for Deleted Products & Audit Log -->
+                    <TabControl BorderThickness="0" Background="Transparent">
+                        <!-- Tab 1: Deleted Products -->
+                        <TabItem Header="📦 Deleted Products" FontSize="14" FontWeight="SemiBold">
+                            <Border Background="White" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    CornerRadius="8" Margin="0,10,0,0" Padding="10">
+                                <ScrollViewer MaxHeight="350" VerticalScrollBarVisibility="Auto">
+                                    <DataGrid ItemsSource="{Binding DeletedProducts}" AutoGenerateColumns="False"
+                                              IsReadOnly="True" SelectionMode="Single"
+                                              HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="90"/>
+                                            <DataGridTextColumn Header="Product Name" Binding="{Binding Name}" Width="*"/>
+                                            <DataGridTextColumn Header="Category" Binding="{Binding Category.Name}" Width="110"/>
+                                            <DataGridTextColumn Header="Price" Binding="{Binding SellingPrice, Converter={StaticResource Currency}}" Width="80"/>
+                                            <DataGridTextColumn Header="Stock" Binding="{Binding StockQuantity}" Width="65"/>
+                                            <DataGridTemplateColumn Header="Action" Width="110">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Button Content="♻️ Restore" Style="{StaticResource PrimaryButton}"
+                                                                Padding="10,4" Height="28" FontSize="12"
+                                                                Command="{Binding DataContext.RestoreProductCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" ToolTip="Restore product back to active catalog"/>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </ScrollViewer>
+                            </Border>
+                        </TabItem>
+
+                        <!-- Tab 2: Audit Delete Log -->
+                        <TabItem Header="📜 Deletion &amp; Restore History" FontSize="14" FontWeight="SemiBold">
+                            <Border Background="White" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    CornerRadius="8" Margin="0,10,0,0" Padding="10">
+                                <ScrollViewer MaxHeight="350" VerticalScrollBarVisibility="Auto">
+                                    <DataGrid ItemsSource="{Binding DeleteLogs}" AutoGenerateColumns="False"
+                                              IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Timestamp (UTC)" Binding="{Binding Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="130"/>
+                                            <DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="140"/>
+                                            <DataGridTextColumn Header="User" Binding="{Binding User.FullName, FallbackValue='System'}" Width="100"/>
+                                            <DataGridTextColumn Header="Details" Binding="{Binding Details}" Width="*"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </ScrollViewer>
+                            </Border>
+                        </TabItem>
+                    </TabControl>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

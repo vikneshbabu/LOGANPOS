@@ -1,0 +1,399 @@
+<UserControl x:Class="ApexPOS.Wpf.Views.PurchaseRateLogbookView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ApexPOS.Wpf.Converters"
+             Background="Transparent">
+
+    <UserControl.Resources>
+        <conv:CurrencyConverter x:Key="Currency"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+    </UserControl.Resources>
+
+    <Grid Margin="24,20">
+        <!-- Main Layout -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 1. Header Title & Top Actions -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,16">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                <Button Style="{StaticResource SuccessButton}" Content="📥 Export Logbook (CSV)"
+                        Command="{Binding ExportCsvCommand}" Height="40" Padding="16,0" Margin="0,0,10,0"
+                        ToolTip="Download complete date-wise purchase rate history"/>
+                <Button Style="{StaticResource PrimaryButton}" Content="➕ Record Rate Change"
+                        Command="{Binding OpenNewRateModalCommand}" Height="40" Padding="18,0"
+                        ToolTip="Manually record a new purchase price revision for a product"/>
+            </StackPanel>
+
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="📖 Product Purchase Rate Logbook" Style="{StaticResource H1}" FontSize="24"/>
+                <TextBlock Text="Maintain and audit chronological product purchase rates, supplier price changes, and profit margins"
+                           Style="{StaticResource CaptionText}" FontSize="12" Margin="0,3,0,0"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- 2. KPI Summary Deck -->
+        <Grid Grid.Row="1" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Card 1: Total Revisions Logged -->
+            <Border Grid.Column="0" Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="16,12" Margin="0,0,6,0">
+                <StackPanel>
+                    <TextBlock Text="📑 TOTAL RATE LOGS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="{Binding TotalRevisions}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,3,0,0"/>
+                    <TextBlock Text="Historical price records maintained" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Card 2: Products Tracked -->
+            <Border Grid.Column="1" Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="16,12" Margin="3,0">
+                <StackPanel>
+                    <TextBlock Text="📦 PRODUCTS TRACKED" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="{Binding UniqueProductsTracked}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource AccentPrimaryBrush}" Margin="0,3,0,0"/>
+                    <TextBlock Text="Distinct items with purchase history" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Card 3: Price Increases -->
+            <Border Grid.Column="2" Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1" CornerRadius="8" Padding="16,12" Margin="3,0">
+                <StackPanel>
+                    <TextBlock Text="🔺 RATE INCREASES" FontSize="11" FontWeight="Bold" Foreground="#991B1B"/>
+                    <TextBlock Text="{Binding RateIncreases}" FontSize="22" FontWeight="Bold" Foreground="#DC2626" Margin="0,3,0,0"/>
+                    <TextBlock Text="Vendor cost went up" FontSize="11" Foreground="#B91C1C"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Card 4: Price Decreases -->
+            <Border Grid.Column="3" Background="#F0FDF4" BorderBrush="#BBF7D0" BorderThickness="1" CornerRadius="8" Padding="16,12" Margin="6,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="🔻 RATE DECREASES" FontSize="11" FontWeight="Bold" Foreground="#166534"/>
+                    <TextBlock Text="{Binding RateDecreases}" FontSize="22" FontWeight="Bold" Foreground="#059669" Margin="0,3,0,0"/>
+                    <TextBlock Text="Vendor cost reduced / discount" FontSize="11" Foreground="#15803D"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- 3. Filter Toolbar & Status Banner -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,12">
+            <!-- Toast notification -->
+            <Border Background="#ECFDF5" BorderBrush="#A7F3D0" BorderThickness="1" CornerRadius="6" Padding="14,8" Margin="0,0,0,10"
+                    Visibility="{Binding StatusMessage.Length, Converter={StaticResource BoolVis}}">
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#065F46" FontWeight="SemiBold" FontSize="12"/>
+            </Border>
+
+            <!-- Toolbar Controls -->
+            <Border Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14,10">
+                <WrapPanel VerticalAlignment="Center">
+                    <!-- Search Input -->
+                    <StackPanel Orientation="Horizontal" Margin="0,4,12,4">
+                        <TextBlock Text="🔍" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBox Style="{StaticResource ModernTextBox}" Width="190" Height="36"
+                                 Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Search by Product Name, SKU, Barcode, PO, or Notes"/>
+                    </StackPanel>
+
+                    <!-- Product Dropdown -->
+                    <StackPanel Orientation="Horizontal" Margin="0,4,12,4">
+                        <TextBlock Text="Product:" VerticalAlignment="Center" Margin="0,0,6,0" Style="{StaticResource CaptionText}"/>
+                        <ComboBox Width="180" Height="36"
+                                  ItemsSource="{Binding ProductsList}" SelectedValuePath="Id"
+                                  SelectedValue="{Binding SelectedProductId}" DisplayMemberPath="Name"
+                                  ToolTip="Filter by specific product"/>
+                    </StackPanel>
+
+                    <!-- Distributor Dropdown -->
+                    <StackPanel Orientation="Horizontal" Margin="0,4,12,4">
+                        <TextBlock Text="Distributor:" VerticalAlignment="Center" Margin="0,0,6,0" Style="{StaticResource CaptionText}"/>
+                        <ComboBox Width="170" Height="36"
+                                  ItemsSource="{Binding SuppliersList}" SelectedValuePath="Id"
+                                  SelectedValue="{Binding SelectedSupplierId}" DisplayMemberPath="Name"
+                                  ToolTip="Filter by Distributor"/>
+                    </StackPanel>
+
+                    <!-- Date Range Filter -->
+                    <StackPanel Orientation="Horizontal" Margin="0,4,12,4">
+                        <TextBlock Text="Date:" VerticalAlignment="Center" Margin="0,0,6,0" Style="{StaticResource CaptionText}"/>
+                        <ComboBox Width="140" Height="36"
+                                  ItemsSource="{Binding DateFilterOptions}"
+                                  SelectedItem="{Binding SelectedDateFilter}"/>
+                    </StackPanel>
+
+                    <!-- Custom Date Range pickers -->
+                    <StackPanel Orientation="Horizontal" Margin="0,4,12,4"
+                                Visibility="{Binding IsCustomDateRange, Converter={StaticResource BoolVis}}">
+                        <DatePicker SelectedDate="{Binding StartDate}" Width="120" Height="36" Margin="0,0,4,0"/>
+                        <TextBlock Text="to" VerticalAlignment="Center" Margin="2,0,4,0"/>
+                        <DatePicker SelectedDate="{Binding EndDate}" Width="120" Height="36" Margin="0,0,6,0"/>
+                    </StackPanel>
+
+                    <!-- Reset Filters Button -->
+                    <Button Style="{StaticResource SecondaryButton}" Content="✕ Reset"
+                            Command="{Binding ResetFiltersCommand}" Height="36" Padding="12,0" Margin="0,4,0,4"
+                            ToolTip="Clear all search and filter parameters"/>
+                </WrapPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- 4. Date-Wise Purchase Rate Log DataGrid -->
+        <Border Grid.Row="3" Style="{StaticResource CardBorder}" Padding="0">
+            <DataGrid ItemsSource="{Binding Logs}" AutoGenerateColumns="False"
+                      IsReadOnly="True" SelectionMode="Single"
+                      RowHeaderWidth="0" GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#F1F5F9" Background="Transparent"
+                      BorderThickness="0" CanUserAddRows="False">
+                <DataGrid.Columns>
+                    <!-- Date -->
+                    <DataGridTemplateColumn Header="Date" Width="100">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel VerticalAlignment="Center" Margin="8,0">
+                                    <TextBlock Text="{Binding EffectiveDate, StringFormat='{}{0:dd-MMM-yyyy}'}" FontWeight="SemiBold" FontSize="12"/>
+                                    <TextBlock Text="{Binding EffectiveDate, StringFormat='{}{0:HH:mm}'}" FontSize="10" Foreground="{StaticResource TextMutedBrush}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Product Details -->
+                    <DataGridTemplateColumn Header="Product Name" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel VerticalAlignment="Center" Margin="8,0">
+                                    <TextBlock Text="{Binding ProductName}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding SKU, StringFormat='SKU: {0}'}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding Barcode, StringFormat='BC: {0}'}" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Distributor -->
+                    <DataGridTextColumn Header="Distributor / Vendor" Binding="{Binding SupplierName}" Width="150"/>
+
+                    <!-- Previous Rate -->
+                    <DataGridTemplateColumn Header="Old Purchase Rate" Width="120">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding OldCostPrice, Converter={StaticResource Currency}}"
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                           VerticalAlignment="Center" Margin="8,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- New Purchase Rate -->
+                    <DataGridTemplateColumn Header="New Purchase Rate" Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding NewCostPrice, Converter={StaticResource Currency}}"
+                                           FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"
+                                           VerticalAlignment="Center" Margin="8,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Rate Change Badge -->
+                    <DataGridTemplateColumn Header="Rate Revision" Width="145">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="4" Padding="8,4" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="6,0"
+                                        Background="{Binding RateChangeBackground}">
+                                    <TextBlock Text="{Binding RateDifferenceFormatted}"
+                                               Foreground="{Binding RateChangeColor}"
+                                               FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Selling Price -->
+                    <DataGridTemplateColumn Header="Selling Price" Width="105">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SellingPrice, Converter={StaticResource Currency}}"
+                                           FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentPrimaryBrush}"
+                                           VerticalAlignment="Center" Margin="8,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- MRP -->
+                    <DataGridTemplateColumn Header="MRP" Width="95">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding EffectiveMRP, Converter={StaticResource Currency}}"
+                                           FontWeight="Normal" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" Margin="8,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Current Margin -->
+                    <DataGridTemplateColumn Header="Margin" Width="105">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel VerticalAlignment="Center" Margin="8,0">
+                                    <TextBlock Text="{Binding ProfitMargin, StringFormat='{}{0:F1}%'}"
+                                               FontWeight="Bold" FontSize="12" Foreground="#059669"/>
+                                    <TextBlock Text="{Binding MarginAmount, Converter={StaticResource Currency}, StringFormat='(₹{0:F2})'}"
+                                               FontSize="10" Foreground="#15803D"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Source / PO -->
+                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="130"/>
+
+                    <!-- Notes -->
+                    <DataGridTextColumn Header="Notes / Reason" Binding="{Binding Notes}" Width="160"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- 5. Manual Rate Change Modal Overlay -->
+        <Grid Grid.RowSpan="4" Background="#80000000"
+              Visibility="{Binding ShowNewRateModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                    CornerRadius="12" Padding="28" Width="520" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <StackPanel>
+                    <!-- Modal Title -->
+                    <DockPanel Margin="0,0,0,20">
+                        <Button DockPanel.Dock="Right" Content="✕" Width="28" Height="28"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CloseNewRateModalCommand}"
+                                ToolTip="Close"/>
+                        <TextBlock Text="📝 Record Product Purchase Rate Change" Style="{StaticResource H2}" FontSize="18"/>
+                    </DockPanel>
+
+                    <!-- Product Selector -->
+                    <TextBlock Text="SELECT PRODUCT" Style="{StaticResource InputLabel}"/>
+                    <ComboBox Height="40" Margin="0,0,0,12"
+                              ItemsSource="{Binding ProductsList}"
+                              SelectedItem="{Binding FormProduct}"
+                              DisplayMemberPath="Name"/>
+
+                    <!-- Date & Source -->
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                            <TextBlock Text="EFFECTIVE DATE" Style="{StaticResource InputLabel}"/>
+                            <DatePicker Height="40" SelectedDate="{Binding FormEffectiveDate}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                            <TextBlock Text="SOURCE / PO NO." Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40" Text="{Binding FormSource}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Current Old Cost Reference -->
+                    <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
+                        <DockPanel>
+                            <TextBlock Text="Current Registered Cost Rate:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                            <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                       Text="{Binding FormOldCost, Converter={StaticResource Currency}}"
+                                       FontWeight="Bold" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Purchase Price, Selling Price, MRP (3 Fields) -->
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="PURCHASE PRICE (₹)" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                                     Text="{Binding FormNewCost, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="SELLING PRICE (₹)" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                                     Text="{Binding FormSellingPrice, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Text="MRP (₹)" Style="{StaticResource InputLabel}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                                     Text="{Binding FormMRP, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Live Margin & Calculation Preview (Selling Price - Purchase Price) -->
+                    <Border Background="#F0FDF4" BorderBrush="#BBF7D0" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="PROFIT / MARGIN:" FontSize="10" FontWeight="Bold" Foreground="#166534"/>
+                                <TextBlock Text="{Binding FormProfit, Converter={StaticResource Currency}}"
+                                           FontWeight="Bold" FontSize="13" Foreground="#047857" Margin="0,2,0,0"/>
+                                <TextBlock Text="(Selling - Cost)" FontSize="9" Foreground="#15803D"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <TextBlock Text="MARGIN %:" FontSize="10" FontWeight="Bold" Foreground="#166534" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding FormMargin, StringFormat='{}{0:F1}%'}"
+                                           FontWeight="Bold" FontSize="13" Foreground="#2563EB" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                <TextBlock Text="on Selling" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <TextBlock Text="RATE REVISION:" FontSize="10" FontWeight="Bold" Foreground="#166534" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding FormDifference, StringFormat='{}{0:+₹0.00;-₹0.00;₹0.00}'}"
+                                           FontWeight="Bold" FontSize="13" Foreground="#D97706" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                <TextBlock Text="vs Old Cost" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" HorizontalAlignment="Right">
+                                <TextBlock Text="DISCOUNT OFF MRP:" FontSize="10" FontWeight="Bold" Foreground="#166534" HorizontalAlignment="Right"/>
+                                <TextBlock Text="{Binding FormDiscount, StringFormat='{}{0:F1}% off'}"
+                                           FontWeight="Bold" FontSize="13" Foreground="#059669" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                                <TextBlock Text="{Binding FormMRP, StringFormat='MRP: ₹{0:F2}'}" FontSize="9" Foreground="#64748B" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Distributor -->
+                    <TextBlock Text="DISTRIBUTOR / SUPPLIER" Style="{StaticResource InputLabel}"/>
+                    <ComboBox Height="40" Margin="0,0,0,12"
+                              ItemsSource="{Binding SuppliersList}" SelectedValuePath="Id"
+                              SelectedValue="{Binding FormSupplierId}" DisplayMemberPath="Name"/>
+
+                    <!-- Notes -->
+                    <TextBlock Text="NOTES / REASON FOR RATE CHANGE" Style="{StaticResource InputLabel}"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Height="50" Margin="0,0,0,20"
+                             Text="{Binding FormNotes}" AcceptsReturn="True"
+                             ToolTip="e.g. Supplier notified 5% price hike, Monsoon freight surcharge, etc."/>
+
+                    <!-- Buttons -->
+                    <DockPanel>
+                        <Button DockPanel.Dock="Left" Style="{StaticResource SecondaryButton}" Content="Cancel"
+                                Command="{Binding CloseNewRateModalCommand}" Height="40" Padding="20,0"/>
+                        <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Style="{StaticResource SuccessButton}"
+                                Content="💾 Save Purchase Rate Log"
+                                Command="{Binding SaveNewRateChangeCommand}" Height="40" Padding="24,0"/>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

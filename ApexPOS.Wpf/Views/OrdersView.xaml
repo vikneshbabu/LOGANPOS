@@ -1,0 +1,516 @@
+<UserControl x:Class="ApexPOS.Wpf.Views.OrdersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ApexPOS.Wpf.Converters"
+             Background="Transparent">
+
+    <UserControl.Resources>
+        <conv:CurrencyConverter x:Key="Currency"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <conv:NullToVisibilityConverter x:Key="NullVis"/>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="2*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT: Orders List -->
+        <Border Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,16,0" Padding="20">
+            <DockPanel>
+                <!-- Status Message Banner -->
+                <Border DockPanel.Dock="Top" Background="#E0F2FE" BorderBrush="{StaticResource AccentPrimaryBrush}" BorderThickness="1"
+                        CornerRadius="6" Padding="12,8" Margin="0,0,0,12"
+                        Visibility="{Binding StatusMessage.Length, Converter={StaticResource BoolVis}}">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource AccentSecondaryBrush}"
+                               FontWeight="SemiBold" FontSize="13"/>
+                </Border>
+
+                <!-- Search & Filters -->
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="🔍 Search"
+                            Command="{Binding SearchCommand}" Height="40" Padding="18,0" Margin="8,0,0,0"/>
+                    <TextBox Style="{StaticResource ModernTextBox}" Height="40"
+                             Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"/>
+                </DockPanel>
+
+                <!-- Date Range & Report Bar -->
+                <Border DockPanel.Dock="Top" Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="12,10" Margin="0,0,0,12">
+                    <StackPanel>
+                        <!-- Date Preset Buttons & Download Report Button -->
+                        <DockPanel Margin="0,0,0,10">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource SuccessButton}" Height="34" Padding="14,0"
+                                    Command="{Binding DownloadSalesReportCommand}" ToolTip="Export sales and orders report to CSV">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📊 Export Report (CSV)" FontWeight="SemiBold" FontSize="12"/>
+                                </StackPanel>
+                            </Button>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="DATE:" Style="{StaticResource CaptionText}" FontWeight="Bold" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <Button Style="{StaticResource OutlineSecondaryButton}" Content="All Time" Height="30" Padding="10,0" Margin="0,0,4,0" FontSize="12"
+                                        Command="{Binding SetDatePresetCommand}" CommandParameter="All"/>
+                                <Button Style="{StaticResource OutlineSecondaryButton}" Content="Today" Height="30" Padding="10,0" Margin="0,0,4,0" FontSize="12"
+                                        Command="{Binding SetDatePresetCommand}" CommandParameter="Today"/>
+                                <Button Style="{StaticResource OutlineSecondaryButton}" Content="Yesterday" Height="30" Padding="10,0" Margin="0,0,4,0" FontSize="12"
+                                        Command="{Binding SetDatePresetCommand}" CommandParameter="Yesterday"/>
+                                <Button Style="{StaticResource OutlineSecondaryButton}" Content="This Week" Height="30" Padding="10,0" Margin="0,0,4,0" FontSize="12"
+                                        Command="{Binding SetDatePresetCommand}" CommandParameter="ThisWeek"/>
+                                <Button Style="{StaticResource OutlineSecondaryButton}" Content="This Month" Height="30" Padding="10,0" Margin="0,0,4,0" FontSize="12"
+                                        Command="{Binding SetDatePresetCommand}" CommandParameter="ThisMonth"/>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- Custom Date Pickers -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="From:" Style="{StaticResource CaptionText}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <DatePicker Grid.Column="1" SelectedDate="{Binding StartDate, Mode=TwoWay}" Height="36" Margin="0,0,12,0"/>
+
+                            <TextBlock Grid.Column="2" Text="To:" Style="{StaticResource CaptionText}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <DatePicker Grid.Column="3" SelectedDate="{Binding EndDate, Mode=TwoWay}" Height="36" Margin="0,0,12,0"/>
+
+                            <Button Grid.Column="4" Style="{StaticResource PrimaryButton}" Content="Filter" Height="36" Padding="14,0" Margin="0,0,6,0"
+                                    Command="{Binding ApplyDateFilterCommand}"/>
+                            <Button Grid.Column="5" Style="{StaticResource SecondaryButton}" Content="Reset" Height="36" Padding="10,0"
+                                    Command="{Binding ClearDateFilterCommand}" ToolTip="Reset date range to All Time"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Status Filter Tabs -->
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
+                    <Button Style="{StaticResource SecondaryButton}" Content="All Orders" Margin="0,0,8,0"
+                            Command="{Binding FilterByStatusCommand}" CommandParameter="All"/>
+                    <Button Style="{StaticResource SecondaryButton}" Content="✅ Completed" Margin="0,0,8,0"
+                            Command="{Binding FilterByStatusCommand}" CommandParameter="Completed"/>
+                    <Button Style="{StaticResource SecondaryButton}" Content="⏸️ On Hold" Margin="0,0,8,0"
+                            Command="{Binding FilterByStatusCommand}" CommandParameter="OnHold"/>
+                    <Button Style="{StaticResource SecondaryButton}" Content="🚫 Voided" Margin="0,0,8,0"
+                            Command="{Binding FilterByStatusCommand}" CommandParameter="Voided"/>
+                </StackPanel>
+
+                <!-- Orders Grid -->
+                <DataGrid ItemsSource="{Binding Orders}" SelectedItem="{Binding SelectedOrder}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          Background="Transparent" BorderThickness="0"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="{StaticResource BorderSubtleBrush}"
+                          HeadersVisibility="Column" SelectionMode="Single"
+                          RowHeight="42">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Invoice #" Binding="{Binding InvoiceNumber}" Width="105"/>
+                        <DataGridTextColumn Header="Date &amp; Time" Binding="{Binding CreatedAt, StringFormat='MM/dd HH:mm'}" Width="95"/>
+                        <DataGridTextColumn Header="Customer" Binding="{Binding Customer.Name, FallbackValue='Walk-in'}" Width="*"/>
+                        <DataGridTextColumn Header="Cashier" Binding="{Binding Cashier.FullName}" Width="85"/>
+                        <DataGridTextColumn Header="Sales Person" Binding="{Binding SalesPersonName, FallbackValue='—'}" Width="95"/>
+                        <DataGridTextColumn Header="Total" Binding="{Binding GrandTotal, Converter={StaticResource Currency}}" Width="85"/>
+                        <DataGridTemplateColumn Header="Status" Width="90">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="4" Padding="6,2" HorizontalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#E2E8F0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding OrderStatus}" Value="Completed">
+                                                        <Setter Property="Background" Value="#D1FAE5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding OrderStatus}" Value="OnHold">
+                                                        <Setter Property="Background" Value="#FEF3C7"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding OrderStatus}" Value="Voided">
+                                                        <Setter Property="Background" Value="#FEE2E2"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding OrderStatus}" FontSize="11" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding OrderStatus}" Value="Completed">
+                                                            <Setter Property="Foreground" Value="#065F46"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding OrderStatus}" Value="OnHold">
+                                                            <Setter Property="Foreground" Value="#92400E"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding OrderStatus}" Value="Voided">
+                                                            <Setter Property="Foreground" Value="#991B1B"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Invoice" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource OutlineSecondaryButton}" Content="📄 View"
+                                            Height="28" Padding="6,0" FontSize="11"
+                                            Command="{Binding DataContext.ViewInvoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+
+        <!-- RIGHT: Order Details -->
+        <Border Grid.Column="1" Style="{StaticResource CardBorder}" Padding="24">
+            <Grid>
+                <!-- Placeholder when no order selected -->
+                <TextBlock Text="Select an order to view details" Style="{StaticResource CaptionText}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="15"
+                           Visibility="{Binding SelectedOrder, Converter={StaticResource BoolVis}, ConverterParameter=Invert}"/>
+
+                <!-- Order Details Panel -->
+                <DockPanel Visibility="{Binding SelectedOrder, Converter={StaticResource BoolVis}}">
+                    <!-- Header -->
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                        <DockPanel>
+                            <TextBlock Text="{Binding SelectedOrder.InvoiceNumber}" Style="{StaticResource H2}"/>
+                            <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                       Text="{Binding SelectedOrder.OrderStatus}" Style="{StaticResource CaptionText}"
+                                       FontWeight="Bold" FontSize="14"/>
+                        </DockPanel>
+                        <TextBlock Text="{Binding SelectedOrder.CreatedAt, StringFormat='Date: {0:yyyy-MM-dd HH:mm:ss}'}"
+                                   Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
+                        <TextBlock Text="{Binding SelectedOrder.Customer.Name, StringFormat='Customer: {0}', FallbackValue='Customer: Walk-in'}"
+                                   Style="{StaticResource CaptionText}"/>
+                    </StackPanel>
+
+                    <!-- Action Buttons at bottom -->
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
+                        <UniformGrid Columns="2" Margin="0,0,0,8">
+                            <Button Style="{StaticResource PrimaryButton}" Content="📄 View Invoice" Margin="0,0,4,0"
+                                    Command="{Binding ViewInvoiceCommand}" CommandParameter="{Binding SelectedOrder}"/>
+                            <Button Style="{StaticResource SecondaryButton}" Content="💾 Download Invoice" Margin="4,0,0,0"
+                                    Command="{Binding DownloadInvoiceCommand}" CommandParameter="{Binding SelectedOrder}"/>
+                        </UniformGrid>
+                        <UniformGrid Columns="2" Margin="0,0,0,8">
+                            <Button Style="{StaticResource OutlineSecondaryButton}" Content="🧾 Thermal Receipt" Margin="0,0,4,0"
+                                    Command="{Binding ViewReceiptCommand}" CommandParameter="{Binding SelectedOrder}"/>
+                            <Button Style="{StaticResource SuccessButton}" Content="▶️ Resume to POS" Margin="4,0,0,0"
+                                    Command="{Binding ResumeOrderCommand}" CommandParameter="{Binding SelectedOrder}"/>
+                        </UniformGrid>
+                        <Button Style="{StaticResource DangerButton}" Content="🚫 Void Order"
+                                Command="{Binding VoidOrderCommand}" CommandParameter="{Binding SelectedOrder}"/>
+                    </StackPanel>
+
+                    <!-- Financial Summary above buttons -->
+                    <Border DockPanel.Dock="Bottom" Background="#F8F9FA" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,12,0,0">
+                        <StackPanel>
+                            <DockPanel Margin="0,2">
+                                <TextBlock Text="Subtotal:" Style="{StaticResource CaptionText}"/>
+                                <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                           Text="{Binding SelectedOrder.SubTotal, Converter={StaticResource Currency}}" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,2">
+                                <TextBlock Text="Discount:" Style="{StaticResource CaptionText}"/>
+                                <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                           Text="{Binding SelectedOrder.DiscountTotal, Converter={StaticResource Currency}}" Foreground="{StaticResource AccentDangerBrush}"/>
+                            </DockPanel>
+                            <Separator Background="{StaticResource BorderSubtleBrush}" Margin="0,6"/>
+                            <DockPanel>
+                                <TextBlock Text="Grand Total:" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" FontSize="16"/>
+                                <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                           Text="{Binding SelectedOrder.GrandTotal, Converter={StaticResource Currency}}"
+                                           Foreground="{StaticResource AccentPrimaryBrush}" FontWeight="Bold" FontSize="18"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Line Items List -->
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Order Items" Style="{StaticResource CaptionText}"
+                                   FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding SelectedOrder.Items}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#F8F9FA" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,6">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                                           Text="{Binding TotalPrice, Converter={StaticResource Currency}}"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding ProductName}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold"/>
+                                                    <TextBlock Foreground="{StaticResource TextMutedBrush}" FontSize="11">
+                                                        <Run Text="{Binding Quantity}"/>
+                                                        <Run Text=" × "/>
+                                                        <Run Text="{Binding UnitPrice, Converter={StaticResource Currency}}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </DockPanel>
+            </Grid>
+        </Border>
+
+        <!-- TAX INVOICE MODAL -->
+        <Grid Grid.ColumnSpan="2" Panel.ZIndex="100"
+              Visibility="{Binding ShowInvoiceModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.6"/>
+            <Border Style="{StaticResource CardBorder}" Width="740" MaxHeight="680" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="0" ClipToBounds="True">
+                <DockPanel>
+                    <!-- Header -->
+                    <Border DockPanel.Dock="Top" Background="{StaticResource BgSidebarBrush}" Padding="24,20">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="✕" Style="{StaticResource SecondaryButton}"
+                                    HorizontalAlignment="Right" Padding="10,4" FontSize="14"
+                                    Command="{Binding CloseInvoiceModalCommand}"/>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="INVOICE" Foreground="#FFFFFF" FontSize="20" FontWeight="Bold" Margin="0,0,12,0"/>
+                                    <Border CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#E0F2FE"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding InvoiceOrder.OrderStatus}" Value="Completed">
+                                                        <Setter Property="Background" Value="#D1FAE5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding InvoiceOrder.OrderStatus}" Value="OnHold">
+                                                        <Setter Property="Background" Value="#FEF3C7"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding InvoiceOrder.OrderStatus}" Value="Voided">
+                                                        <Setter Property="Background" Value="#FEE2E2"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding InvoiceOrder.OrderStatus}" FontSize="11" FontWeight="Bold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#007EA7"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding InvoiceOrder.OrderStatus}" Value="Completed">
+                                                            <Setter Property="Foreground" Value="#065F46"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding InvoiceOrder.OrderStatus}" Value="OnHold">
+                                                            <Setter Property="Foreground" Value="#92400E"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding InvoiceOrder.OrderStatus}" Value="Voided">
+                                                            <Setter Property="Foreground" Value="#991B1B"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="{Binding InvoiceOrder.InvoiceNumber, StringFormat='Invoice #{0}'}" Foreground="#94A3B8" FontSize="13" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Bottom Action Buttons -->
+                    <Border DockPanel.Dock="Bottom" Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}"
+                            BorderThickness="0,1,0,0" Padding="20,16">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="✕ Close"
+                                    Padding="20,8" Command="{Binding CloseInvoiceModalCommand}" Margin="8,0,0,0"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Style="{StaticResource PrimaryButton}" Content="💾 Download Invoice"
+                                        Padding="18,8" Margin="0,0,8,0"
+                                        Command="{Binding DownloadInvoiceCommand}" CommandParameter="{Binding InvoiceOrder}"/>
+                                <Button Style="{StaticResource SecondaryButton}" Content="🖨️ Print"
+                                        Padding="16,8" Command="{Binding PrintInvoiceCommand}" CommandParameter="{Binding InvoiceOrder}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Scrollable Content -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
+                        <StackPanel>
+                            <!-- Meta Info Grid -->
+                            <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left: Invoice Meta -->
+                                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <TextBlock Text="INVOICE DETAILS" Style="{StaticResource CaptionText}" FontWeight="Bold" Margin="0,0,0,6"/>
+                                        <DockPanel Margin="0,2">
+                                            <TextBlock Text="Date &amp; Time:" Style="{StaticResource CaptionText}"/>
+                                            <TextBlock Text="{Binding InvoiceOrder.CreatedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                        <DockPanel Margin="0,2">
+                                            <TextBlock Text="Cashier:" Style="{StaticResource CaptionText}"/>
+                                            <TextBlock Text="{Binding InvoiceOrder.Cashier.FullName, FallbackValue='Staff'}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                        <DockPanel Margin="0,2" Visibility="{Binding InvoiceOrder.SalesPersonName, Converter={StaticResource NullVis}}">
+                                            <TextBlock Text="Sales Person:" Style="{StaticResource CaptionText}"/>
+                                            <TextBlock Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Right">
+                                                <Run Text="{Binding InvoiceOrder.SalesPersonName, Mode=OneWay}"/>
+                                                <Run Text=" (⭐ "/>
+                                                <Run Text="{Binding InvoiceOrder.SalesPersonLoyaltyPointsEarned, Mode=OneWay, StringFormat='{}{0:N0} pts'}"/>
+                                                <Run Text=")"/>
+                                            </TextBlock>
+                                        </DockPanel>
+                                        <DockPanel Margin="0,2">
+                                            <TextBlock Text="Payment Status:" Style="{StaticResource CaptionText}"/>
+                                            <TextBlock Text="{Binding InvoiceOrder.PaymentStatus}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                    </StackPanel>
+
+                                    <!-- Right: Customer Meta -->
+                                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                        <TextBlock Text="BILLED TO" Style="{StaticResource CaptionText}" FontWeight="Bold" Margin="0,0,0,6"/>
+                                        <DockPanel Margin="0,2">
+                                            <TextBlock Text="Customer:" Style="{StaticResource CaptionText}"/>
+                                            <TextBlock Text="{Binding InvoiceOrder.Customer.Name, FallbackValue='Walk-in Customer'}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                        <DockPanel Margin="0,2">
+                                            <TextBlock Text="Phone:" Style="{StaticResource CaptionText}"/>
+                                            <TextBlock Text="{Binding InvoiceOrder.Customer.Phone, FallbackValue='-'}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                        <DockPanel Margin="0,2">
+                                            <TextBlock Text="Loyalty Points:" Style="{StaticResource CaptionText}"/>
+                                            <TextBlock Text="{Binding InvoiceOrder.Customer.LoyaltyPoints, StringFormat='{}{0:F0} pts', FallbackValue='0 pts'}"
+                                                       Foreground="{StaticResource AccentSecondaryBrush}" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Line Items Table -->
+                            <TextBlock Text="ORDER ITEMS" Style="{StaticResource CaptionText}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <DataGrid ItemsSource="{Binding InvoiceOrder.Items}"
+                                      AutoGenerateColumns="False" IsReadOnly="True"
+                                      Background="Transparent" BorderThickness="1" BorderBrush="{StaticResource BorderSubtleBrush}"
+                                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{StaticResource BorderSubtleBrush}"
+                                      HeadersVisibility="Column" SelectionMode="Single"
+                                      Margin="0,0,0,16" MaxHeight="220">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Item Description" Binding="{Binding ProductName}" Width="*"/>
+                                    <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="100"/>
+                                    <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="50"/>
+                                    <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, Converter={StaticResource Currency}}" Width="90"/>
+                                    <DataGridTextColumn Header="Discount" Binding="{Binding DiscountAmount, Converter={StaticResource Currency}}" Width="80"/>
+                                    <DataGridTextColumn Header="Total" Binding="{Binding TotalPrice, Converter={StaticResource Currency}}" Width="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Totals & Payment Summary -->
+                            <Border Background="#F8FAFC" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    CornerRadius="8" Padding="16">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="260"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left: Payment details -->
+                                    <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                                        <TextBlock Text="PAYMENT BREAKDOWN" Style="{StaticResource CaptionText}" FontWeight="Bold" Margin="0,0,0,6"/>
+                                        <ItemsControl ItemsSource="{Binding InvoiceOrder.Payments}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="0,2">
+                                                        <TextBlock Text="{Binding PaymentMethod}" Style="{StaticResource CaptionText}"/>
+                                                        <TextBlock Text="{Binding AmountPaid, Converter={StaticResource Currency}}"
+                                                                   Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+
+                                    <!-- Right: Subtotal, Tax, Discounts, Grand Total -->
+                                    <StackPanel Grid.Column="1">
+                                        <DockPanel Margin="0,2">
+                                            <TextBlock Text="Subtotal:" Style="{StaticResource CaptionText}"/>
+                                            <TextBlock Text="{Binding InvoiceOrder.SubTotal, Converter={StaticResource Currency}}"
+                                                       Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                        <DockPanel Margin="0,2">
+                                            <TextBlock Text="Discount:" Style="{StaticResource CaptionText}"/>
+                                            <TextBlock Text="{Binding InvoiceOrder.DiscountTotal, Converter={StaticResource Currency}}"
+                                                       Foreground="{StaticResource AccentDangerBrush}" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                        <Separator Background="{StaticResource BorderSubtleBrush}" Margin="0,6"/>
+                                        <DockPanel>
+                                            <TextBlock Text="Grand Total:" FontWeight="Bold" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding InvoiceOrder.GrandTotal, Converter={StaticResource Currency}}"
+                                                       Foreground="{StaticResource AccentPrimaryBrush}" FontWeight="Bold" FontSize="18" HorizontalAlignment="Right"/>
+                                        </DockPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- RECEIPT PREVIEW MODAL -->
+        <Grid Grid.ColumnSpan="2" Panel.ZIndex="100"
+              Visibility="{Binding ShowReceiptModal, Converter={StaticResource BoolVis}}">
+            <Border Background="#1A1A40" Opacity="0.5"/>
+            <Border Style="{StaticResource CardBorder}" Width="440" VerticalAlignment="Center"
+                    HorizontalAlignment="Center" Padding="28">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,16">
+                        <TextBlock Text="🧾 Thermal Receipt" Style="{StaticResource H2}" VerticalAlignment="Center"/>
+                        <Button DockPanel.Dock="Right" Content="✕" Style="{StaticResource SecondaryButton}"
+                                HorizontalAlignment="Right" Padding="8,4" FontSize="14"
+                                Command="{Binding CloseReceiptModalCommand}"/>
+                    </DockPanel>
+
+                    <!-- Receipt Paper Display -->
+                    <Border Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                            CornerRadius="8" Padding="16" Margin="0,0,0,16" MaxHeight="400">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <TextBox Text="{Binding ReceiptText, Mode=OneWay}"
+                                     FontFamily="Consolas" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"
+                                     Background="Transparent" BorderThickness="0"
+                                     IsReadOnly="True" TextWrapping="Wrap"/>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Action Buttons -->
+                    <UniformGrid Columns="3">
+                        <Button Style="{StaticResource PrimaryButton}" Content="🖨️ Print" Margin="0,0,4,0"
+                                Command="{Binding PrintReceiptCommand}"/>
+                        <Button Style="{StaticResource SecondaryButton}" Content="💾 Download" Margin="2,0"
+                                Command="{Binding DownloadReceiptCommand}"/>
+                        <Button Style="{StaticResource SecondaryButton}" Content="✕ Close" Margin="4,0,0,0"
+                                Command="{Binding CloseReceiptModalCommand}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

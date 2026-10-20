@@ -1,0 +1,220 @@
+<UserControl x:Class="ApexPOS.Wpf.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ApexPOS.Wpf.Converters"
+             Background="Transparent">
+    <UserControl.Resources>
+        <conv:CurrencyConverter x:Key="Currency"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="28,24">
+        <StackPanel>
+            <!-- Executive Header & Download Sales Data -->
+            <DockPanel Margin="0,0,0,20">
+                <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}"
+                        Content="📥 Download Sales Data (CSV)"
+                        Command="{Binding DownloadSalesDataCommand}"
+                        Height="40" Padding="18,0"/>
+                <StackPanel>
+                    <TextBlock Text="📊 Executive Dashboard" Style="{StaticResource H1}"/>
+                    <TextBlock Text="Real-time sales performance, net profit analytics, and stock overview." Style="{StaticResource CaptionText}"/>
+                </StackPanel>
+            </DockPanel>
+
+            <!-- Download Confirmation Banner -->
+            <Border Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="8"
+                    Padding="14,10" Margin="0,0,0,16"
+                    Visibility="{Binding DownloadStatusMessage.Length, Converter={StaticResource BoolVis}}">
+                <TextBlock Text="{Binding DownloadStatusMessage}" Foreground="#065F46" FontWeight="SemiBold"/>
+            </Border>
+
+            <!-- KPI Cards Row -->
+            <UniformGrid Columns="4" Margin="0,0,0,24">
+                <!-- Today's Sales (Sky Blue Accent) -->
+                <Border Margin="0,0,12,0" CornerRadius="12" Padding="24">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#00A8E8" Offset="0"/>
+                            <GradientStop Color="#007EA7" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <StackPanel>
+                        <TextBlock Text="💰" FontSize="28" Margin="0,0,0,8"/>
+                        <TextBlock Text="Today's Sales" Foreground="#E0F2FE" FontSize="13" FontWeight="Medium"/>
+                        <TextBlock Text="{Binding TodaySales, Converter={StaticResource Currency}}"
+                                   Foreground="White" FontSize="32" FontWeight="Bold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Net Profit (Emerald Green) -->
+                <Border Margin="6,0" CornerRadius="12" Padding="24">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#10B981" Offset="0"/>
+                            <GradientStop Color="#059669" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <StackPanel>
+                        <TextBlock Text="📈" FontSize="28" Margin="0,0,0,8"/>
+                        <TextBlock Text="Net Profit" Foreground="#D1FAE5" FontSize="13" FontWeight="Medium"/>
+                        <TextBlock Text="{Binding TodayProfit, Converter={StaticResource Currency}}"
+                                   Foreground="White" FontSize="32" FontWeight="Bold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Transactions (Corporate Navy) -->
+                <Border Margin="6,0" CornerRadius="12" Padding="24">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#1A1A40" Offset="0"/>
+                            <GradientStop Color="#2E2E6E" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <StackPanel>
+                        <TextBlock Text="🧾" FontSize="28" Margin="0,0,0,8"/>
+                        <TextBlock Text="Transactions" Foreground="#CBD5E1" FontSize="13" FontWeight="Medium"/>
+                        <TextBlock Text="{Binding TodayTransactions}" Foreground="White"
+                                   FontSize="32" FontWeight="Bold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Low Stock (Warm Amber) -->
+                <Border Margin="12,0,0,0" CornerRadius="12" Padding="24">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#D97706" Offset="0"/>
+                            <GradientStop Color="#B45309" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <StackPanel>
+                        <TextBlock Text="⚠️" FontSize="28" Margin="0,0,0,8"/>
+                        <TextBlock Text="Low Stock Items" Foreground="#FEF3C7" FontSize="13" FontWeight="Medium"/>
+                        <TextBlock Text="{Binding LowStockCount}" Foreground="White"
+                                   FontSize="32" FontWeight="Bold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Charts Row -->
+            <Grid Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Sales Trend Chart -->
+                <Border Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="📊 Sales Trend (Last 7 Days)" Style="{StaticResource H3}" Margin="0,0,0,16"/>
+                        <ItemsControl ItemsSource="{Binding SalesChartData}" Height="200">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="7" VerticalAlignment="Bottom"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="4,0">
+                                        <TextBlock Text="{Binding Value, StringFormat='₹{0:N0}'}"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="10"
+                                                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                        <Border Width="36" MinHeight="20"
+                                                Height="{Binding BarHeight}"
+                                                CornerRadius="4,4,0,0" Margin="0,0,0,4">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                    <GradientStop Color="#38BDF8" Offset="0"/>
+                                                    <GradientStop Color="#00A8E8" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                        <TextBlock Text="{Binding Label}" Foreground="{StaticResource TextSecondaryBrush}"
+                                                   FontSize="11" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Top Products -->
+                <Border Grid.Column="1" Style="{StaticResource CardBorder}" Margin="12,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="🏆 Top Selling Products" Style="{StaticResource H3}" Margin="0,0,0,16"/>
+                        <ItemsControl ItemsSource="{Binding TopProducts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F8F9FA" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,0,0,8">
+                                        <DockPanel>
+                                            <Border DockPanel.Dock="Left" Width="32" Height="32" CornerRadius="16"
+                                                    Background="{StaticResource AccentGradientBrush}" Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding Rank}" Foreground="White" FontWeight="Bold"
+                                                           FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding QuantitySold, StringFormat='{}{0} sold'}"
+                                                       Foreground="{StaticResource AccentSuccessBrush}" FontSize="13"
+                                                       VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding ProductName}" Foreground="{StaticResource TextPrimaryBrush}"
+                                                       FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Category Sales -->
+            <Border Style="{StaticResource CardBorder}">
+                <StackPanel>
+                    <TextBlock Text="📋 Sales by Category (7 Days)" Style="{StaticResource H3}" Margin="0,0,0,16"/>
+                    <ItemsControl ItemsSource="{Binding CategorySales}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="4"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#F8F9FA" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="4">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding CategoryName}" Foreground="{StaticResource TextSecondaryBrush}"
+                                                   FontSize="13" FontWeight="Medium"/>
+                                        <TextBlock Text="{Binding TotalSales, Converter={StaticResource Currency}}"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" FontSize="22" FontWeight="Bold" Margin="0,6,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Recent Completed Sales -->
+            <Border Style="{StaticResource CardBorder}" Margin="0,20,0,0">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,16">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                                Content="📥 Download CSV" Command="{Binding DownloadSalesDataCommand}"
+                                Padding="14,0" Height="34"/>
+                        <TextBlock Text="🧾 Recent Completed Sales" Style="{StaticResource H3}"/>
+                    </DockPanel>
+
+                    <DataGrid ItemsSource="{Binding RecentSalesOrders}" AutoGenerateColumns="False"
+                              IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Invoice #" Binding="{Binding InvoiceNumber}" Width="130"/>
+                            <DataGridTextColumn Header="Date &amp; Time (UTC)" Binding="{Binding CreatedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="140"/>
+                            <DataGridTextColumn Header="Customer" Binding="{Binding Customer.Name, FallbackValue='Walk-in Customer'}" Width="*"/>
+                            <DataGridTextColumn Header="Cashier" Binding="{Binding Cashier.FullName, FallbackValue='Cashier'}" Width="110"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding PaymentStatus}" Width="100"/>
+                            <DataGridTextColumn Header="Total Amount" Binding="{Binding GrandTotal, Converter={StaticResource Currency}}" Width="120"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
