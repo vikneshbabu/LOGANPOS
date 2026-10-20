@@ -1,0 +1,37 @@
+## Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+publish/
+release/
+installer_output/
+stdout.txt
+stderr.txt
+
+## Visual Studio & VS Code cache and settings
+.vs/
+.vscode/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+## Test results
+TestResults/
+[Tt]est[Rr]esult*/
+
+## SQLite databases and local temp files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+## Rider / JetBrains
+.idea/
+
+## OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini

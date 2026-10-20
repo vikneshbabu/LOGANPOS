@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexPOS.Domain", "ApexPOS.Domain\ApexPOS.Domain.csproj", "{B22FCA05-2A05-4810-BBCF-28D18890C2CC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexPOS.Data", "ApexPOS.Data\ApexPOS.Data.csproj", "{9C4BC726-0866-4285-9726-5674F050AFC7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexPOS.Services", "ApexPOS.Services\ApexPOS.Services.csproj", "{6BDD9232-DA8D-433D-8DE6-5EE3F6572408}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexPOS.Wpf", "ApexPOS.Wpf\ApexPOS.Wpf.csproj", "{765A6118-D48C-4D40-99B1-EE818964A0D7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApexPOS.Tests", "ApexPOS.Tests\ApexPOS.Tests.csproj", "{E0D7025C-233D-4E3E-9EE3-94D13ED5EEF9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B22FCA05-2A05-4810-BBCF-28D18890C2CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B22FCA05-2A05-4810-BBCF-28D18890C2CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B22FCA05-2A05-4810-BBCF-28D18890C2CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B22FCA05-2A05-4810-BBCF-28D18890C2CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C4BC726-0866-4285-9726-5674F050AFC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C4BC726-0866-4285-9726-5674F050AFC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C4BC726-0866-4285-9726-5674F050AFC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C4BC726-0866-4285-9726-5674F050AFC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BDD9232-DA8D-433D-8DE6-5EE3F6572408}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BDD9232-DA8D-433D-8DE6-5EE3F6572408}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BDD9232-DA8D-433D-8DE6-5EE3F6572408}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BDD9232-DA8D-433D-8DE6-5EE3F6572408}.Release|Any CPU.Build.0 = Release|Any CPU
+		{765A6118-D48C-4D40-99B1-EE818964A0D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{765A6118-D48C-4D40-99B1-EE818964A0D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{765A6118-D48C-4D40-99B1-EE818964A0D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{765A6118-D48C-4D40-99B1-EE818964A0D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0D7025C-233D-4E3E-9EE3-94D13ED5EEF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0D7025C-233D-4E3E-9EE3-94D13ED5EEF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0D7025C-233D-4E3E-9EE3-94D13ED5EEF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0D7025C-233D-4E3E-9EE3-94D13ED5EEF9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

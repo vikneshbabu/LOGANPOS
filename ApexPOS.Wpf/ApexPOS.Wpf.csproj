@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ApexPOS.Domain\ApexPOS.Domain.csproj" />
+    <ProjectReference Include="..\ApexPOS.Data\ApexPOS.Data.csproj" />
+    <ProjectReference Include="..\ApexPOS.Services\ApexPOS.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-rc2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>ApexPOS</AssemblyName>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <Product>ApexPOS</Product>
+    <Title>ApexPOS</Title>
+    <Company>Govindarajan Store</Company>
+    <Description>ApexPOS - Point of Sale Retail System</Description>
+    <AssemblyVersion>2.15.0.0</AssemblyVersion>
+    <FileVersion>2.15.0.0</FileVersion>
+    <Version>2.15.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="app.ico" />
+  </ItemGroup>
+
+</Project>
